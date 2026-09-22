@@ -1,0 +1,15 @@
+{% extends 'aasov/base.html' %}
+{% block planner_content %}
+<div class="row g-3">
+{% for project in projects %}
+  <div class="col-md-6 col-xl-4"><div class="card h-100"><div class="card-body">
+    <h2 class="h5"><a href="{% url 'aasov:project' project.pk %}">{{ project.name }}</a></h2>
+    <p>{{ project.description|default:'No description.' }}</p>
+    <small class="text-body-secondary">Updated {{ project.updated_at|date:'Y-m-d H:i' }}</small>
+  </div></div></div>
+{% empty %}
+  <div class="col"><div class="alert alert-info">No projects yet. An administrator can create one in Django administration by selecting regions or systems.</div></div>
+{% endfor %}
+</div>
+{% if perms.aasov.add_project and user.is_staff %}<a class="btn btn-primary mt-3" href="{% url 'admin:aasov_project_add' %}">Create project in administration</a>{% endif %}
+{% endblock %}

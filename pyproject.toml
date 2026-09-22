@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aa-sov-planner"
+version = "0.1.2"
+description = "Sovereignty resource and workforce route planner for Alliance Auth"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+license = "MIT"
+dependencies = ["allianceauth>=5,<6", "django-sri>=0.8,<1", "django-eveonline-sde>=0.2.0,<0.3"]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-django>=4.8", "ruff", "build", "fakeredis"]
+
+[tool.setuptools.packages.find]
+include = ["aasov*"]
+
+[tool.setuptools.package-data]
+aasov = ["templates/aasov/*.html", "static/aasov/*"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.aa_settings"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]

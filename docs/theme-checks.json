@@ -1,0 +1,93 @@
+{
+  "report": [
+    {
+      "theme": "flatly",
+      "cssLoaded": true,
+      "colors": {
+        "body": {
+          "color": "rgb(33, 37, 41)",
+          "background": "rgb(255, 255, 255)"
+        },
+        "warning": {
+          "color": "rgb(231, 76, 60)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "button": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(44, 62, 80)"
+        },
+        "progress": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(44, 62, 80)"
+        },
+        "badge": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(231, 76, 60)"
+        }
+      },
+      "filter": true,
+      "forms": true,
+      "mobile": true
+    },
+    {
+      "theme": "darkly",
+      "cssLoaded": true,
+      "colors": {
+        "body": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(34, 34, 34)"
+        },
+        "warning": {
+          "color": "rgb(231, 76, 60)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "button": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(55, 90, 127)"
+        },
+        "progress": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(55, 90, 127)"
+        },
+        "badge": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(231, 76, 60)"
+        }
+      },
+      "filter": true,
+      "forms": true,
+      "mobile": true
+    },
+    {
+      "theme": "materia",
+      "cssLoaded": true,
+      "colors": {
+        "body": {
+          "color": "rgb(68, 68, 68)",
+          "background": "rgb(255, 255, 255)"
+        },
+        "warning": {
+          "color": "rgb(229, 28, 35)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "button": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(33, 150, 243)"
+        },
+        "progress": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(33, 150, 243)"
+        },
+        "badge": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(229, 28, 35)"
+        }
+      },
+      "filter": true,
+      "forms": true,
+      "mobile": true
+    }
+  ],
+  "errors": [],
+  "failed": []
+}

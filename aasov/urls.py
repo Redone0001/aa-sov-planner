@@ -1,0 +1,21 @@
+from django.urls import path
+
+from . import views
+
+app_name = "aasov"
+urlpatterns = [
+    path("", views.index, name="index"),
+    path("<int:project_id>/", views.project, name="project"),
+    path("<int:project_id>/systems/<int:system_id>/mode/", views.system_mode, name="mode"),
+    path(
+        "<int:project_id>/systems/<int:system_id>/upgrades/add/", views.upgrade, name="upgrade_add"
+    ),
+    path(
+        "<int:project_id>/systems/<int:system_id>/upgrades/<int:upgrade_id>/",
+        views.upgrade,
+        name="upgrade_edit",
+    ),
+    path("<int:project_id>/routes/add/", views.route, name="route_add"),
+    path("<int:project_id>/routes/<int:route_id>/", views.route, name="route_edit"),
+    path("<int:project_id>/remove/<str:kind>/<int:item_id>/", views.remove, name="remove"),
+]

@@ -1,0 +1,4 @@
+include LICENSE README.md
+recursive-include aasov/templates *.html
+recursive-include aasov/static *.css *.js
+recursive-include tests *.py

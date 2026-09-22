@@ -1,0 +1,13 @@
+{% extends 'allianceauth/base-bs5.html' %}
+{% load static i18n %}
+{% block page_title %}{% trans 'Sovereignty Planner' %}{% endblock %}
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'aasov/planner.css' %}">{% endblock %}
+{% block content %}
+<div class="container-fluid sov-planner">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div><h1 class="h2 mb-1">{% trans 'Sovereignty Planner' %}</h1><p class="text-body-secondary mb-0">{% trans 'Plan infrastructure. Balance resources. Connect your space.' %}</p></div>
+    <a class="btn btn-secondary" href="{% url 'aasov:index' %}">{% trans 'All projects' %}</a>
+  </div>
+  {% block planner_content %}{% endblock %}
+</div>
+{% endblock %}
