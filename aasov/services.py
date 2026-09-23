@@ -36,10 +36,10 @@ def sync_project(project):
         )
 
         if new_ids:
-            from .tasks import snapshot_ownership
+            from .tasks import queue_ownership_snapshot
 
             transaction.on_commit(
-                lambda: snapshot_ownership.delay(project.pk, new_ids), robust=True
+                lambda: queue_ownership_snapshot(project.pk, new_ids), robust=True
             )
 
 

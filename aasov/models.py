@@ -37,6 +37,23 @@ class PlannedSystem(models.Model):
     owner_name = models.CharField(max_length=255, blank=True)
     owner_kind = models.CharField(max_length=12, default="unknown")
     owner_observed_at = models.DateTimeField(null=True, blank=True)
+    owner_queued_at = models.DateTimeField(null=True, blank=True)
+    owner_attempted_at = models.DateTimeField(null=True, blank=True)
+    owner_error = models.TextField(blank=True)
+
+    @property
+    def ownership_status(self):
+        if self.owner_observed_at:
+            return "Captured"
+        if self.owner_error:
+            return "Last attempt failed"
+        if self.owner_queued_at and (
+            not self.owner_attempted_at or self.owner_queued_at > self.owner_attempted_at
+        ):
+            return "Queued; waiting for worker"
+        if self.owner_attempted_at:
+            return "Started; no result recorded"
+        return "Not queued"
 
     class Meta:
         ordering = ("solar_system__name",)

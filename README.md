@@ -100,7 +100,7 @@ Restart AA web services and Celery workers, then run `python manage.py aasov_sna
 
 ## Ownership snapshots
 
-When new systems are added, a task queries public ESI sovereignty ownership and resolves owner names in batches. The page displays the claiming alliance (or faction/unclaimed), with the observation time in Details and the owner tooltip. Snapshots are not continuously refreshed. Failed requests retry; until a snapshot succeeds the page says **Not captured yet**, never “Unclaimed” based on missing data. No character token or new ESI scopes are required.
+When new systems are added, a task queries public ESI sovereignty ownership and resolves owner names in batches. The page displays the claiming alliance (or faction/unclaimed), with the observation time in Details and the owner tooltip. Snapshots are not continuously refreshed. Failed requests retry and record an error in admin; until a snapshot succeeds the page says **Not captured yet**, never “Unclaimed” based on missing data. No character token or new ESI scopes are required.
 
 After upgrading, fill missing snapshots on existing projects (these reflect ownership at the time of the backfill, not historic creation):
 
@@ -109,6 +109,28 @@ python manage.py aasov_snapshot_owners
 ```
 
 This command also retries missing snapshots if the worker/broker was unavailable at creation; existing snapshots remain unchanged.
+
+### Ownership diagnostics in admin (0.2.2)
+
+**Administration → Sovereignty Planner → Projects → your project** now shows a snapshot summary and the first 50 systems with owner, snapshot time, status and last error. Follow **View all systems, diagnostics and retry actions** for the paginated **Planned systems** list. Each system has read-only owner ID/type/name, capture time, queued time, last attempt time and last error. Filter for missing/failed snapshots or search by system, project or owner.
+
+Staff with `aasov.change_project` can select projects or systems and run **Capture missing ownership snapshots**. Staff with read access can inspect snapshots but cannot trigger lookups. Existing snapshots are preserved; these actions fill missing ownership only.
+
+- **Not queued:** no queue record is available (including older plans).
+- **Queued; waiting for worker:** the task has been submitted but has not recorded an attempt. Check that AA workers were restarted after installing the module and are consuming the correct queue.
+- **Started; no result recorded:** the lookup began; if this persists, check for worker interruption/timeouts.
+- **Last attempt failed:** inspect the recorded error, including the failing ESI stage/HTTP status or broker failure. Task retries may still be pending.
+- **Captured:** owner and observation timestamp are saved.
+
+To bypass Celery and diagnose one project directly:
+
+```bash
+python manage.py aasov_snapshot_owners --now --project 1
+```
+
+Replace `1` with the project's ID, or omit `--project` for all projects. This reports captured counts or an error and fills missing snapshots synchronously. If it succeeds while queued jobs do not, investigate Celery/broker configuration. A missing system in an ESI response no longer blocks snapshots for other returned systems.
+
+When upgrading to 0.2.2, run `python manage.py migrate` for the diagnostic fields and restart AA web services and Celery workers. Old task attempts cannot be reconstructed; retry missing snapshots to populate their diagnostics.
 
 ## Best ratting
 
