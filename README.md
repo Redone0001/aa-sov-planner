@@ -73,9 +73,11 @@ Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project
 1. Open **Administration → Sovereignty Planner → Projects → Add**. Enter a name and select regions and/or individual systems. Regions include player-claimable nullsec systems only; NPC-owned systems, empire space and wormholes are excluded.
 2. Open **Sovereignty Planner** from the AA menu and choose the project.
 3. Add upgrades and choose Planned, Online or Offline. Save even if the budget is negative; a red warning identifies the system and deficit. Exclusivity conflicts are saved as warnings too, so alternative plans can be compared.
-4. Set workforce sources to **Export**, receivers to **Import**, and intermediate systems to **Transit**. All new systems default to Transit.
-5. Add a workforce route and its allocated amount. The app finds a shortest available stargate path inside the project. Routes fail validation if disconnected, self-referencing, outside the project, or beyond the import/export limits.
+4. Click **Import from…** or **Export to…** beside a system, then choose the other endpoint and workforce amount. Saving automatically sets the source to Export and the receiver to Import. Intermediate systems must be **Transit**; all new systems default to Transit.
+5. Check the live route preview before saving: it shows the complete shortest stargate path through the project’s Transit systems. Connectivity is checked again when saved. Disconnected paths, self-imports, exceeded import/export limits and changes that would break existing routes are rejected. Each system displays its sources, destination and route paths.
 6. Inspect the route paths, local balances and fuel requirements. Adjust or remove routes before changing a mode that would break connectivity. Alternate valid transit paths are found automatically.
+
+Upgrade, mode and route edits open in an AA-themed dialog and refresh budgets without reloading the page. The system filter and table scroll are preserved. When adding upgrades, leave **Keep open to add another upgrade** checked to add several in succession. Standard form pages remain available without JavaScript.
 
 Saving a project's selections **adds** missing systems. It never removes planned systems or resets upgrades if a region/system is deselected. To start again, create a new project; deleting an entire project through the normal admin confirmation removes its plan. Projects are independent even when they contain the same EVE systems.
 

@@ -2,16 +2,8 @@
 {% block planner_content %}
 <div class="card sov-form mx-auto"><div class="card-body">
 <h2 class="h4 mb-3">{{ title }}</h2>
-<form method="post">{% csrf_token %}
-  {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
-  {% for field in form %}<div class="mb-3">
-    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-    {{ field }}{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-    {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
-  </div>{% endfor %}
-  <button class="btn btn-primary" type="submit">Save</button>
-  <a class="btn btn-secondary" href="{% url 'aasov:project' project.pk %}">Cancel</a>
-</form>
-<p class="text-body-secondary small mt-3 mb-0">Negative budgets are allowed and flagged in the plan. Routes require an Export source, an Import destination, and a stargate path through Transit systems. Each source can supply one destination; each destination can receive from three sources.</p>
+{% include 'aasov/_form.html' %}
 </div></div>
 {% endblock %}
+
+{% block extra_javascript %}{{ block.super }}{% load static %}<script src="{% static 'aasov/planner.js' %}" defer></script>{% endblock %}

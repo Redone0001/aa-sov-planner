@@ -1,13 +1,22 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.views.decorators.http import require_GET, require_POST
 
 from .forms import ModeForm, RouteForm, UpgradeForm
 from .models import PlannedSystem, PlannedUpgrade, Project, WorkforceRoute
-from .services import calculate_project, edit_system, remove_item, save_route, save_upgrade
+from .services import (
+    calculate_project,
+    edit_system,
+    remove_item,
+    route_proposal,
+    save_route,
+    save_upgrade,
+)
 
 
 @login_required
@@ -31,8 +40,36 @@ def project(request, project_id):
     return render(request, "aasov/project.html", context)
 
 
-def form_page(request, plan, form, title):
-    return render(request, "aasov/form.html", {"project": plan, "form": form, "title": title})
+def is_async(request):
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def saved(request, plan, message):
+    if is_async(request):
+        context = calculate_project(plan)
+        context.update(project=plan, can_edit=request.user.has_perm("aasov.edit_plan"))
+        return JsonResponse(
+            {
+                "saved": True,
+                "message": message,
+                "board": render_to_string("aasov/_board.html", context, request=request),
+            }
+        )
+    messages.success(request, message)
+    return redirect("aasov:project", project_id=plan.pk)
+
+
+def form_page(request, plan, form, title, **extra):
+    context = {"project": plan, "form": form, "title": title, "action": request.path, **extra}
+    if is_async(request):
+        return JsonResponse(
+            {
+                "saved": False,
+                "title": title,
+                "html": render_to_string("aasov/_form.html", context, request=request),
+            }
+        )
+    return render(request, "aasov/form.html", context)
 
 
 def validation_error(form, error):
@@ -52,8 +89,7 @@ def system_mode(request, project_id, system_id):
         except ValidationError as error:
             validation_error(form, error)
         else:
-            messages.success(request, "Workforce mode updated.")
-            return redirect("aasov:project", project_id=plan.pk)
+            return saved(request, plan, "Workforce mode updated.")
     return form_page(request, plan, form, f"Workforce mode · {system}")
 
 
@@ -82,11 +118,8 @@ def upgrade(request, project_id, system_id, upgrade_id=None):
         except ObjectDoesNotExist as error:
             raise Http404 from error
         else:
-            messages.success(
-                request, "Upgrade saved. Planned and online upgrades count toward the budget."
-            )
-            return redirect("aasov:project", project_id=plan.pk)
-    return form_page(request, plan, form, f"Upgrade · {system}")
+            return saved(request, plan, "Upgrade saved. Budgets updated.")
+    return form_page(request, plan, form, f"Upgrade · {system}", repeat=upgrade_id is None)
 
 
 @login_required
@@ -96,7 +129,8 @@ def route(request, project_id, route_id=None):
     item = (
         get_object_or_404(WorkforceRoute, pk=route_id, source__project=plan) if route_id else None
     )
-    form = RouteForm(request.POST or None, project=plan, instance=item)
+    initial = {key: request.GET.get(key) for key in ("source", "destination")}
+    form = RouteForm(request.POST or None, project=plan, instance=item, initial=initial)
     if request.method == "POST" and form.is_valid():
         try:
             save_route(
@@ -105,15 +139,22 @@ def route(request, project_id, route_id=None):
                 form.cleaned_data["destination"],
                 form.cleaned_data["amount"],
                 route_id,
+                configure_modes=True,
             )
         except ValidationError as error:
             validation_error(form, error)
         except ObjectDoesNotExist as error:
             raise Http404 from error
         else:
-            messages.success(request, "Workforce route saved.")
-            return redirect("aasov:project", project_id=plan.pk)
-    return form_page(request, plan, form, "Workforce route")
+            return saved(
+                request,
+                plan,
+                "Workforce route saved. Source set to Export; destination set to Import.",
+            )
+    preview_url = reverse("aasov:route_preview", args=[plan.pk])
+    if route_id:
+        preview_url += f"?route_id={route_id}"
+    return form_page(request, plan, form, "Workforce route", preview_url=preview_url)
 
 
 @login_required
@@ -122,10 +163,35 @@ def route(request, project_id, route_id=None):
 def remove(request, project_id, kind, item_id):
     if kind not in ("upgrade", "route"):
         raise Http404
-    get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project, pk=project_id)
     try:
         remove_item(project_id, kind, item_id)
     except ObjectDoesNotExist as error:
         raise Http404 from error
-    messages.success(request, "Planning item removed.")
-    return redirect("aasov:project", project_id=project_id)
+    return saved(request, plan, "Planning item removed. Budgets updated.")
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_GET
+def route_preview(request, project_id):
+    plan = get_object_or_404(Project, pk=project_id)
+    try:
+        source = int(request.GET.get("source", ""))
+        destination = int(request.GET.get("destination", ""))
+        route_id = int(request.GET["route_id"]) if request.GET.get("route_id") else None
+    except (ValueError, TypeError):
+        return JsonResponse({"valid": False, "message": "Choose both a source and a destination."})
+    if route_id:
+        get_object_or_404(WorkforceRoute, pk=route_id, source__project=plan)
+    try:
+        path = route_proposal(plan.pk, source, destination, route_id)
+    except ValidationError as error:
+        return JsonResponse({"valid": False, "message": " ".join(error.messages)})
+    return JsonResponse(
+        {
+            "valid": True,
+            "message": "Valid stargate path. Connectivity is checked again when saving.",
+            "path": [{"name": str(node), "mode": node.get_mode_display()} for node in path],
+        }
+    )

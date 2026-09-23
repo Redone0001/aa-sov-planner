@@ -89,6 +89,9 @@ class Budget:
     upgrades: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
     fuels: list = field(default_factory=list)
+    imports: list = field(default_factory=list)
+    exports: list = field(default_factory=list)
+    transit_routes: list = field(default_factory=list)
 
     @property
     def power_left(self):
@@ -191,9 +194,14 @@ def calculate_project(project):
             budgets[route.destination_id].imported += route.amount
             for pk in path[1:-1]:
                 budgets[pk].transiting += route.amount
-        route_rows.append(
-            {"route": route, "valid": valid, "path": [nodes[pk] for pk in path] if path else []}
-        )
+        row = {"route": route, "valid": valid, "path": [nodes[pk] for pk in path] if path else []}
+        route_rows.append(row)
+        budgets[route.source_id].exports.append(row)
+        if route.destination_id in budgets:
+            budgets[route.destination_id].imports.append(row)
+        if valid:
+            for pk in path[1:-1]:
+                budgets[pk].transit_routes.append(row)
     for pk, b in budgets.items():
         if b.power_left < 0:
             b.warnings.append(f"Power deficit: {-b.power_left:,}.")
@@ -251,8 +259,41 @@ def save_upgrade(project_id, system_id, upgrade, status, planned_id=None):
     return planned
 
 
+def route_proposal(project_id, source_id, destination_id, route_id=None):
+    """Validate endpoint modes and the full transit path without changing the plan."""
+    nodes, graph = project_graph(project_id)
+    if source_id not in nodes or destination_id not in nodes:
+        raise ValidationError("Choose source and destination systems from this project.")
+    if source_id == destination_id:
+        raise ValidationError("A system cannot export to itself.")
+    routes = list(WorkforceRoute.objects.filter(source__project_id=project_id).exclude(pk=route_id))
+    if any(r.source_id == source_id for r in routes):
+        raise ValidationError(
+            "This source already exports to a destination. Edit its existing route instead."
+        )
+    if sum(r.destination_id == destination_id for r in routes) >= 3:
+        raise ValidationError("A system can import from at most three source systems.")
+    nodes[source_id].mode = "export"
+    nodes[destination_id].mode = "import"
+    path = find_route(source_id, destination_id, nodes, graph)
+    if path is None:
+        raise ValidationError(
+            "No valid stargate path. Intermediate systems must be in this project and in Transit mode."
+        )
+    for r in routes:
+        if (
+            nodes[r.source_id].mode != "export"
+            or nodes[r.destination_id].mode != "import"
+            or find_route(r.source_id, r.destination_id, nodes, graph) is None
+        ):
+            raise ValidationError(
+                "Setting these endpoints to Export and Import would break an existing route. Remove or reroute it first."
+            )
+    return [nodes[pk] for pk in path]
+
+
 @transaction.atomic
-def save_route(project_id, source, destination, amount, route_id=None):
+def save_route(project_id, source, destination, amount, route_id=None, *, configure_modes=False):
     project = Project.objects.select_for_update().get(pk=project_id)
     route = (
         WorkforceRoute.objects.get(pk=route_id, source__project=project)
@@ -262,6 +303,12 @@ def save_route(project_id, source, destination, amount, route_id=None):
     route.source = project.systems.get(pk=source.pk)
     route.destination = project.systems.get(pk=destination.pk)
     route.amount = amount
+    if configure_modes:
+        route_proposal(project_id, route.source_id, route.destination_id, route_id)
+        route.source.mode = "export"
+        route.destination.mode = "import"
+        route.source.save(update_fields=["mode"])
+        route.destination.save(update_fields=["mode"])
     route.full_clean()
     route.save()
     touch(project)

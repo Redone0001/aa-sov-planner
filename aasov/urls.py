@@ -15,6 +15,7 @@ urlpatterns = [
         views.upgrade,
         name="upgrade_edit",
     ),
+    path("<int:project_id>/routes/preview/", views.route_preview, name="route_preview"),
     path("<int:project_id>/routes/add/", views.route, name="route_add"),
     path("<int:project_id>/routes/<int:route_id>/", views.route, name="route_edit"),
     path("<int:project_id>/remove/<str:kind>/<int:item_id>/", views.remove, name="remove"),

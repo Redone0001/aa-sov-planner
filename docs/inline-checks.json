@@ -1,0 +1,29 @@
+{
+  "report": [
+    {
+      "theme": "flatly",
+      "inlineAddRemove": true,
+      "repeatAdd": true,
+      "validInvalidTransitPreview": true,
+      "routeSave": true,
+      "documentNavigations": 0
+    },
+    {
+      "theme": "darkly",
+      "inlineAddRemove": true,
+      "repeatAdd": true,
+      "validInvalidTransitPreview": true,
+      "routeSave": true,
+      "documentNavigations": 0
+    },
+    {
+      "theme": "materia",
+      "inlineAddRemove": true,
+      "repeatAdd": true,
+      "validInvalidTransitPreview": true,
+      "routeSave": true,
+      "documentNavigations": 0
+    }
+  ],
+  "errors": []
+}

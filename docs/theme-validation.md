@@ -27,3 +27,7 @@ All screenshots use synthetic demonstration data.
 | Materia | [Preview](planner-materia.png) | [Form](form-materia.png) | [Mobile](mobile-materia.png) |
 
 [Browser check results](theme-checks.json)
+
+## Inline editing (0.1.3)
+
+Browser checks in Flatly, Darkly and Materia cover adding/removing upgrades, repeat-add dialogs, valid and invalid transit previews, and saving routes. All completed with zero document navigations and no JavaScript errors. See [results](inline-checks.json) and route dialogs: [Flatly](route-flatly.png), [Darkly](route-darkly.png), [Materia](route-materia.png).
