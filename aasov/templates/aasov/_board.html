@@ -1,4 +1,5 @@
 {% load humanize %}
+{% include 'aasov/_inventory.html' %}
 <div class="d-flex flex-wrap gap-2 align-items-center mb-2 small">
   <span class="badge text-bg-secondary">{{ budgets|length }} systems</span>
   <span class="badge {% if warning_count %}text-bg-danger{% else %}text-bg-success{% endif %}">{{ warning_count }} systems with warnings</span>

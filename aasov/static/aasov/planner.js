@@ -100,6 +100,31 @@
         if (form && ["source", "destination"].includes(event.target.name)) preview(form);
     });
     document.addEventListener("click", async event => {
+        const copy = event.target.closest("[data-sov-copy]");
+        if (copy) {
+            event.preventDefault();
+            const scope = copy.dataset.sovCopy;
+            const text = JSON.parse(document.getElementById("sov-inventory-clipboard").textContent)[scope];
+            if (!text) { feedback("sov-feedback", "No upgrades to copy in this list."); return; }
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const field = document.createElement("textarea");
+                    field.value = text;
+                    field.style.cssText = "position:fixed;opacity:0;";
+                    document.body.append(field);
+                    try {
+                        field.select();
+                        if (!document.execCommand("copy")) throw new Error("Copy unavailable");
+                    } finally { field.remove(); copy.focus({preventScroll: true}); }
+                }
+                feedback("sov-feedback", `${scope === "planned" ? "Planned" : "All"} upgrades copied (item, tab, quantity).`);
+            } catch {
+                feedback("sov-feedback", "Clipboard access failed. Expand the inventory list to select and copy its contents.", true);
+            }
+            return;
+        }
         const toggle = event.target.closest("[data-sov-collapse]");
         if (toggle) {
             const id = toggle.closest("tbody").dataset.constellation;

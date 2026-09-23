@@ -98,6 +98,10 @@ python manage.py collectstatic --noinput
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
 
+## Upgrade inventory (0.3.1)
+
+The expandable inventory line at the top of each plan totals upgrades by item across all systems. **Planned (copy)** copies only planned upgrades; **All (copy)** includes planned, online and offline upgrades. Each clipboard line contains `item<TAB>quantity`, without a header, ready to paste into a shopping list or spreadsheet. Inventory updates after edits without a page reload, and is available to read-only users too.
+
 ## CSV import (0.3.0)
 
 Plan Managers (`aasov.view_project` + `aasov.manage_plan`) can click **Import CSV** in a project. Download the minimal template, replace the example row, and upload a CSV/TSV export. Editors without the management permission cannot import. Supported layouts include:

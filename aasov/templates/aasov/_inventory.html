@@ -1,0 +1,9 @@
+<details class="sov-details mb-2 small" data-details-key="inventory">
+  <summary>List of all sov upgrades for the plan / <button type="button" class="btn btn-link btn-sm p-0" data-sov-copy="planned">Planned (copy)</button> / <button type="button" class="btn btn-link btn-sm p-0" data-sov-copy="all" title="Includes planned, online and offline upgrades">All (copy)</button></summary>
+  <p class="text-body-secondary my-1">All includes planned, online and offline upgrades across the whole plan.</p>
+  <table class="table table-sm w-auto mb-1">
+    <thead><tr><th scope="col">Upgrade</th><th scope="col" class="text-end">Planned</th><th scope="col" class="text-end">All</th></tr></thead>
+    <tbody>{% for item in inventory %}<tr><td>{{ item.name }}</td><td class="text-end">{{ item.planned }}</td><td class="text-end">{{ item.all }}</td></tr>{% empty %}<tr><td colspan="3">No upgrades in this plan.</td></tr>{% endfor %}</tbody>
+  </table>
+</details>
+{{ inventory_clipboard|json_script:"sov-inventory-clipboard" }}

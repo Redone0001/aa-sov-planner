@@ -151,10 +151,17 @@ def calculate_project(project):
         .order_by("pk")
     )
     groups = defaultdict(Counter)
+    inventory = {}
     for planned in upgrades:
         b = budgets[planned.system_id]
         b.upgrades.append(planned)
         u = planned.upgrade
+        item = inventory.setdefault(
+            u.item_type_id, {"name": u.item_type.name, "planned": 0, "all": 0}
+        )
+        item["all"] += 1
+        if planned.status == PlannedUpgrade.Status.PLANNED:
+            item["planned"] += 1
         if planned.status == PlannedUpgrade.Status.OFFLINE:
             continue
         b.power_used += u.power_allocation or 0
@@ -239,7 +246,15 @@ def calculate_project(project):
     for b in ordered:
         c = b.system.solar_system.constellation
         constellations.setdefault(c.pk, {"constellation": c, "budgets": []})["budgets"].append(b)
+    inventory_rows = sorted(inventory.values(), key=lambda item: item["name"].casefold())
     return {
+        "inventory": inventory_rows,
+        "inventory_clipboard": {
+            scope: "\n".join(
+                f"{item['name']}\t{item[scope]}" for item in inventory_rows if item[scope]
+            )
+            for scope in ("planned", "all")
+        },
         "budgets": ordered,
         "constellations": list(constellations.values()),
         "routes": route_rows,

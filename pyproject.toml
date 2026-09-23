@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aa-sov-planner"
-version = "0.3.0"
+version = "0.3.1"
 description = "Sovereignty resource and workforce route planner for Alliance Auth"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
