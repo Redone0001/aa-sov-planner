@@ -40,7 +40,7 @@ class RouteForm(forms.Form):
     )
     amount = forms.IntegerField(min_value=1, max_value=2147483647, label="Workforce to transfer")
 
-    def __init__(self, *args, project, instance=None, **kwargs):
+    def __init__(self, *args, project, instance=None, import_destinations_only=False, **kwargs):
         if instance:
             kwargs["initial"] = {
                 "source": instance.source_id,
@@ -51,4 +51,11 @@ class RouteForm(forms.Form):
         for name in ("source", "destination"):
             self.fields[name].queryset = project.systems.select_related("solar_system")
             self.fields[name].widget.attrs["class"] = "form-select"
+        if import_destinations_only:
+            self.fields["destination"].queryset = self.fields["destination"].queryset.filter(
+                mode=PlannedSystem.Mode.IMPORT
+            )
+            self.fields[
+                "destination"
+            ].help_text = "Only systems in Import mode are listed. Change the receiving system to Import if it is missing."
         self.fields["amount"].widget.attrs["class"] = "form-control"

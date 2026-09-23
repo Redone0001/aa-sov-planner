@@ -140,7 +140,14 @@ def route(request, project_id, route_id=None):
         get_object_or_404(WorkforceRoute, pk=route_id, source__project=plan) if route_id else None
     )
     initial = {key: request.GET.get(key) for key in ("source", "destination")}
-    form = RouteForm(request.POST or None, project=plan, instance=item, initial=initial)
+    import_destinations_only = bool(request.GET.get("source"))
+    form = RouteForm(
+        request.POST or None,
+        project=plan,
+        instance=item,
+        initial=initial,
+        import_destinations_only=import_destinations_only,
+    )
     if request.method == "POST" and form.is_valid():
         try:
             save_route(
@@ -164,7 +171,16 @@ def route(request, project_id, route_id=None):
     preview_url = reverse("aasov:route_preview", args=[plan.pk])
     if route_id:
         preview_url += f"?route_id={route_id}"
-    return form_page(request, plan, form, "Workforce route", preview_url=preview_url)
+    if import_destinations_only:
+        preview_url += ("&" if "?" in preview_url else "?") + "imports_only=1"
+    return form_page(
+        request,
+        plan,
+        form,
+        "Workforce route",
+        preview_url=preview_url,
+        action=request.get_full_path(),
+    )
 
 
 @login_required
@@ -194,6 +210,11 @@ def route_preview(request, project_id):
         return JsonResponse({"valid": False, "message": "Choose both a source and a destination."})
     if route_id:
         get_object_or_404(WorkforceRoute, pk=route_id, source__project=plan)
+    if (
+        request.GET.get("imports_only") == "1"
+        and not plan.systems.filter(pk=destination, mode=PlannedSystem.Mode.IMPORT).exists()
+    ):
+        return JsonResponse({"valid": False, "message": "Choose a destination in Import mode."})
     try:
         path = route_proposal(plan.pk, source, destination, route_id)
     except ValidationError as error:

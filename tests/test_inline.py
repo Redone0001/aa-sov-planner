@@ -1,4 +1,5 @@
 import pytest
+from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse
@@ -153,8 +154,35 @@ def test_import_action_prefills_destination(client, editor, world):
     a = world.system("A")
     client.force_login(editor)
     data = client.get(endpoint("route_add", world.project.pk), {"destination": a.pk}, **AJAX).json()
-    from bs4 import BeautifulSoup
-
     html = BeautifulSoup(data["html"], "html.parser")
     assert html.select_one("#id_destination option[selected]")["value"] == str(a.pk)
     assert html.select_one("form[data-route-preview]")
+
+
+def test_export_action_only_lists_importers_and_rechecks_on_save(client, editor, world):
+    source = world.system("Source", "export")
+    importer = world.system("Importer", "import")
+    world.system("Transit")
+    world.system("Other exporter", "export")
+    world.connect(source, importer)
+    client.force_login(editor)
+    action = endpoint("route_add", world.project.pk) + f"?source={source.pk}"
+    html = BeautifulSoup(client.get(action, **AJAX).json()["html"], "html.parser")
+    options = html.select("#id_destination option[value]")
+    assert [o["value"] for o in options if o["value"]] == [str(importer.pk)]
+    assert html.select_one("form")["action"] == action
+    importer.mode = "transit"
+    importer.save()
+    preview = client.get(
+        endpoint("route_preview", world.project.pk),
+        {"source": source.pk, "destination": importer.pk, "imports_only": "1"},
+    ).json()
+    assert not preview["valid"]
+    assert not client.post(
+        action, {"source": source.pk, "destination": importer.pk, "amount": 10}, **AJAX
+    ).json()["saved"]
+    importer.mode = "import"
+    importer.save()
+    assert client.post(
+        action, {"source": source.pk, "destination": importer.pk, "amount": 10}, **AJAX
+    ).json()["saved"]
