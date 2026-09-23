@@ -9,7 +9,8 @@ An installable Alliance Auth app for planning sovereignty upgrades and workforce
 - AA menu and Bootstrap 5 base template, using the selected AA theme, shared framework assets, and theme colors.
 - Power and workforce initial, generated, used, remaining, imported/exported values; accessible progress bars, negative balances and explicit warnings.
 - Planned and online upgrades consume resources, generate resources and require fuel. Offline upgrades do neither.
-- SDE-backed upgrade exclusivity warnings, resource conversion, hourly fuel requirements and startup fuel totals for planned upgrades.
+- Upgrade exclusivity warnings include SDE exclusion groups and different numbered tiers of the same upgrade family (for example Major Threat Detection Array II and III). Offline tiers do not conflict.
+- SDE-backed resource conversion, hourly fuel requirements and startup fuel totals for planned upgrades.
 - Import, transit and export modes. One destination per exporter, at most three exporters per importer. Shortest stargate paths through transit systems in the same project; intermediate systems cannot use passing workforce.
 - Project-wide locking during edits to serialize route limits. POST-only deletion and Django CSRF protection. Read access never authorizes mutations.
 

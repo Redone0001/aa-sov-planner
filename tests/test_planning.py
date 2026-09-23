@@ -190,3 +190,18 @@ def test_resource_and_gate_reads_are_batched(world, django_assert_num_queries):
         world.system(f"S{i}")
     with django_assert_num_queries(7):
         calculate_project(world.project)
+
+
+@pytest.mark.parametrize("tiers", [("II", "III"), ("2", "3")])
+def test_same_family_tiers_conflict_without_sde_group(world, tiers):
+    a = world.system("A")
+    first = world.upgrade(f"Major Threat Detection Array {tiers[0]}")
+    second = world.upgrade(f"Major Threat Detection Array {tiers[1]}")
+    minor = world.upgrade("Minor Threat Detection Array III")
+    save_upgrade(world.project.pk, a.pk, first, "online")
+    save_upgrade(world.project.pk, a.pk, minor, "planned")
+    assert not budgets(world)[a.pk].warnings
+    planned = save_upgrade(world.project.pk, a.pk, second, "planned")
+    assert any("Conflicting" in w for w in budgets(world)[a.pk].warnings)
+    save_upgrade(world.project.pk, a.pk, second, "offline", planned.pk)
+    assert not budgets(world)[a.pk].warnings

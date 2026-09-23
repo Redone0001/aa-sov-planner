@@ -1,5 +1,6 @@
 """Queries against django-eveonline-sde 0.2; no copied or hardcoded resource values."""
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -65,3 +66,11 @@ def gate_graph(system_ids):
         graph[source].add(target)
         graph[target].add(source)
     return graph
+
+
+def upgrade_family(upgrade):
+    """Group numbered tiers by their canonical SDE name, independently of SDE exclusions."""
+    name = getattr(upgrade.item_type, "name_en", None) or upgrade.item_type.name
+    # SDE sovereignty tiers use Roman numerals; also accept numeric tier labels.
+    match = re.fullmatch(r"(.+?)\s+(?:[1-9]\d*|I|II|III|IV|V|VI|VII|VIII|IX|X)", name.strip())
+    return match.group(1).casefold() if match else None

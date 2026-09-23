@@ -155,7 +155,10 @@ def calculate_project(project):
         b.power_generated += u.power_production or 0
         b.workforce_generated += u.workforce_production or 0
         if u.mutually_exclusive_group:
-            groups[planned.system_id][u.mutually_exclusive_group] += 1
+            groups[planned.system_id][("sde", u.mutually_exclusive_group)] += 1
+        family = sde.upgrade_family(u)
+        if family:
+            groups[planned.system_id][("family", family)] += 1
         if u.fuel_item_type_id:
             fuel = {
                 "name": u.fuel_item_type.name,
