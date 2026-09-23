@@ -42,7 +42,10 @@
         if (response.redirected || !response.headers.get("content-type")?.includes("application/json")) {
             throw new Error("Your session may have expired. Refresh the page and sign in before continuing.");
         }
-        if (!response.ok) throw new Error(`Request failed (${response.status}). Check your access and refresh the plan before retrying.`);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || `Request failed (${response.status}). Check your access and refresh the plan before retrying.`);
+        }
         return response.json();
     }
     function updateBoard(html) {
@@ -125,7 +128,7 @@
     document.addEventListener("submit", async event => {
         const form = event.target;
         const editing = modal && editor.contains(form) && form.matches("[data-sov-form]");
-        const removing = board && form.matches("[data-sov-delete]");
+        const removing = board && form.matches("[data-sov-delete], [data-sov-action]");
         if (!editing && !removing) return;
         event.preventDefault(); if (busy) return;
         busy = true;

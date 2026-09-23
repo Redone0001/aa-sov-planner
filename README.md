@@ -5,7 +5,7 @@ An installable Alliance Auth app for planning sovereignty upgrades and workforce
 ## Features
 
 - Projects managed in Django admin. Region and system selections form a deduplicated union of player-claimable nullsec systems; new systems start with no upgrades.
-- Read, Editor and Plan Manager permissions, assignable through normal AA groups/states. Plan Managers can remove systems without Django admin access.
+- Read, Editor and Plan Manager permissions, assignable through normal AA groups/states. Plan Managers can remove systems and import planned upgrades from CSV without Django admin access.
 - Compact, collapsible constellation groups, remembered upgrade status and per-constellation ratting optimisation with workforce routing.
 - Creation-time ownership snapshots from public ESI, captured by the existing AA Celery workers.
 - AA menu and Bootstrap 5 base template, using the selected AA theme, shared framework assets, and theme colors.
@@ -75,7 +75,7 @@ Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project
 
 1. Open **Administration → Sovereignty Planner → Projects → Add**. Enter a name and select regions and/or individual systems. Regions include player-claimable nullsec systems only; NPC-owned systems, empire space and wormholes are excluded.
 2. Open **Sovereignty Planner** from the AA menu and choose the project.
-3. Add upgrades and choose Planned, Online or Offline. Save even if the budget is negative; a red warning identifies the system and deficit. Exclusivity conflicts are saved as warnings too, so alternative plans can be compared.
+3. Add upgrades and choose Planned, Online or Offline. Editors can click **✓** beside a Planned upgrade to mark it installed (Online), without reloading the page. Save even if the budget is negative; a red warning identifies the system and deficit. Exclusivity conflicts are saved as warnings too, so alternative plans can be compared.
 4. Click **Import from…** or **Export to…** beside a system, then choose the other endpoint and workforce amount. **Export to…** lists only systems already in Import mode; set the receiving system to Import first if needed. Saving sets the source to Export and the receiver to Import. Intermediate systems must be **Transit**; all new systems default to Transit.
 5. Check the live route preview before saving: it shows the complete shortest stargate path through the project’s Transit systems. Connectivity is checked again when saved. Disconnected paths, self-imports, exceeded import/export limits and changes that would break existing routes are rejected. Each system displays its sources, destination and route paths.
 6. Inspect the route paths, local balances and fuel requirements. Adjust or remove routes before changing a mode that would break connectivity. Alternate valid transit paths are found automatically.
@@ -97,6 +97,38 @@ python manage.py collectstatic --noinput
 ```
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
+
+## CSV import (0.3.0)
+
+Plan Managers (`aasov.view_project` + `aasov.manage_plan`) can click **Import CSV** in a project. Download the minimal template, replace the example row, and upload a CSV/TSV export. Editors without the management permission cannot import. Supported layouts include:
+
+```csv
+system,upgrade
+YOUR-SYSTEM,Major Threat Detection Array III
+YOUR-SYSTEM,Minor Threat Detection Array II
+```
+
+- One upgrade per row, multiple `Upgrade 1` / `Upgrade 2` columns, or multiple names in a quoted cell separated by comma, semicolon, pipe or newline.
+- Upgrade names as column headers with yes/no markers (`1`, `yes`, `true`, `x`, `✓` include the upgrade; blank/`0`/`no`/`false` skip it). Status words such as `online`/`offline` in those marker cells also include the entry, but it will be imported as Planned.
+- Numbered upgrade families as headers, such as `Major Threat` / `Minor Threat Detection Array`, with `III` / `3` in the cell to select a tier.
+- Comma, semicolon, tab and pipe delimiters, including Excel's `sep=;` line. UTF-8 (with/without BOM), UTF-16 BOM and Windows-1252 text are accepted. Export `.xlsx` workbooks to CSV first.
+- System names or EVE solar-system IDs; SDE upgrade names or type IDs. Names ignore case/extra whitespace; numbered tiers accept Roman or Arabic numerals, including `Major Threat 3` as shorthand. Ambiguous or unknown names are errors, never fuzzy matches.
+- Common headers are detected automatically. For unusual headings, enter the system column and upgrade column names or their 1-based numbers. Explicit upgrade-column overrides refer to cells containing upgrade names/IDs. Extra workforce, power, status, notes and other unrecognised columns are ignored and listed in the preview.
+
+Every selected entry becomes **Planned**, including matches currently Online or Offline. The preview explicitly shows those resets. Duplicate system/upgrade pairs are collapsed; already-Planned matches are unchanged. Other upgrades, routes and resource data are not overwritten. Systems must already be in the project; the importer never adds or restores excluded systems.
+
+Review the preview and choose **Import as Planned**. Any row error blocks the entire import. Saving is atomic, and a concurrent change to an affected upgrade invalidates the preview. Previews expire after 15 minutes. Negative budgets and mutually exclusive planned upgrades are allowed and warned about as with manual editing.
+
+Limits: 2 MiB, 5,000 data rows / unique pairs and 256 columns. The preview displays up to 200 matched pairs and 50 errors, with totals. CSV content is not kept after parsing; a signed preview contains only matched IDs and their expected existing states.
+
+To update from 0.2.2:
+
+```bash
+python -m pip install --upgrade "git+https://github.com/Redone0001/aa-sov-planner.git@master"
+python manage.py collectstatic --noinput
+```
+
+Restart the AA web service and refresh the browser. No new database migration is required for 0.3.0 (run `migrate` as usual if upgrading from an earlier version).
 
 ## Ownership snapshots
 

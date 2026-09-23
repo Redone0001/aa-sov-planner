@@ -363,3 +363,19 @@ def remove_system(project_id, system_id):
     # Endpoint routes cascade. Routes using this system for transit remain visible
     # with invalid-path warnings unless an alternative transit path exists.
     touch(project)
+
+
+@transaction.atomic
+def install_upgrade(project_id, system_id, upgrade_id):
+    project = Project.objects.select_for_update().get(pk=project_id)
+    planned = PlannedUpgrade.objects.get(
+        pk=upgrade_id, system_id=system_id, system__project=project
+    )
+    if planned.status == PlannedUpgrade.Status.OFFLINE:
+        raise ValidationError(
+            "This upgrade is now Offline. Refresh the plan and edit it explicitly to bring it Online."
+        )
+    if planned.status == PlannedUpgrade.Status.PLANNED:
+        planned.status = PlannedUpgrade.Status.ONLINE
+        planned.save(update_fields=["status"])
+        touch(project)

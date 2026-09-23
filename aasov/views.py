@@ -307,3 +307,108 @@ def best_ratting(request, project_id, constellation_id):
         disable_submit=not preview,
         **preview,
     )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_POST
+def upgrade_installed(request, project_id, system_id, upgrade_id):
+    from .services import install_upgrade
+
+    plan = get_object_or_404(Project, pk=project_id)
+    try:
+        install_upgrade(plan.pk, system_id, upgrade_id)
+    except ObjectDoesNotExist as error:
+        raise Http404 from error
+    except ValidationError as error:
+        if is_async(request):
+            return JsonResponse({"message": " ".join(error.messages)}, status=409)
+        messages.error(request, " ".join(error.messages))
+        return redirect("aasov:project", project_id=plan.pk)
+    return saved(request, plan, "Upgrade marked as installed (Online).")
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.manage_plan"), raise_exception=True)
+@require_GET
+def csv_template(request, project_id):
+    from django.http import HttpResponse
+
+    get_object_or_404(Project, pk=project_id)
+    response = HttpResponse(
+        "\ufeffsystem,upgrade\r\nYOUR-SYSTEM,Major Threat Detection Array III\r\n",
+        content_type="text/csv; charset=utf-8",
+    )
+    response["Content-Disposition"] = 'attachment; filename="sov-planner-template.csv"'
+    return response
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.manage_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def csv_upload(request, project_id):
+    from django.core import signing
+
+    from .csv_import import apply_import, parse_import
+    from .forms import CSVConfirmForm, CSVUploadForm
+
+    plan = get_object_or_404(Project, pk=project_id)
+    salt = f"aasov.csv.{request.user.pk}"
+    preview = None
+    if request.method == "POST" and "import_preview" in request.POST:
+        confirmation = CSVConfirmForm(request.POST)
+        try:
+            if not confirmation.is_valid():
+                raise ValidationError("Missing import preview. Upload the CSV again.")
+            payload = signing.loads(
+                confirmation.cleaned_data["import_preview"], salt=salt, max_age=900
+            )
+            added, reset = apply_import(plan.pk, payload)
+            return saved(
+                request,
+                plan,
+                f"CSV imported: {added} upgrades added as Planned; {reset} existing upgrades reset to Planned.",
+            )
+        except (signing.BadSignature, ValidationError) as error:
+            form = CSVUploadForm({})
+            form.add_error(
+                None,
+                "Preview expired or invalid. Upload the CSV again."
+                if isinstance(error, signing.BadSignature)
+                else " ".join(error.messages),
+            )
+    else:
+        form = CSVUploadForm(
+            request.POST if request.method == "POST" else None, request.FILES or None
+        )
+        if request.method == "POST" and form.is_valid():
+            try:
+                preview = parse_import(
+                    plan,
+                    form.cleaned_data["csv_file"],
+                    form.cleaned_data["system_column"],
+                    form.cleaned_data["upgrade_columns"],
+                    form.cleaned_data["delimiter"],
+                )
+            except ValidationError as error:
+                validation_error(form, error)
+            else:
+                if not preview["error_count"]:
+                    token = signing.dumps(
+                        {"project": plan.pk, "entries": preview["entries"]},
+                        salt=salt,
+                        compress=True,
+                    )
+                    form = CSVConfirmForm(initial={"import_preview": token})
+    ready = preview is not None and not preview["error_count"]
+    return form_page(
+        request,
+        plan,
+        form,
+        "Import planned upgrades · CSV",
+        csv_preview=preview,
+        csv_help=True,
+        csv_ready=ready,
+        submit_label="Import as Planned" if ready else "Preview CSV",
+        hide_budget_note=True,
+    )

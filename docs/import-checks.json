@@ -1,0 +1,35 @@
+{
+  "report": [
+    {
+      "theme": "flatly",
+      "csvErrors": true,
+      "templateDownload": true,
+      "semicolonUpload": true,
+      "ignoredResourcesAndStatus": true,
+      "importAsPlanned": true,
+      "inlineInstalled": true,
+      "documentNavigations": 0
+    },
+    {
+      "theme": "darkly",
+      "csvErrors": true,
+      "templateDownload": true,
+      "semicolonUpload": true,
+      "ignoredResourcesAndStatus": true,
+      "importAsPlanned": true,
+      "inlineInstalled": true,
+      "documentNavigations": 0
+    },
+    {
+      "theme": "materia",
+      "csvErrors": true,
+      "templateDownload": true,
+      "semicolonUpload": true,
+      "ignoredResourcesAndStatus": true,
+      "importAsPlanned": true,
+      "inlineInstalled": true,
+      "documentNavigations": 0
+    }
+  ],
+  "errors": []
+}

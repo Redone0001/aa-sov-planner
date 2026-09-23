@@ -45,3 +45,13 @@ Flatly, Darkly and Materia were checked with the compact header and constellatio
 | Materia | [Planner](compact-materia.png) | [Preview](ratting-materia.png) |
 
 All screenshots use synthetic systems, alliances and upgrade values. Visible row count depends on viewport size, warnings and upgrade count.
+
+## CSV imports and installation check marks (0.3.0)
+
+Browser checks passed in Flatly, Darkly and Materia for file upload, rejected rows, minimal template download, semicolon CSV with ignored workforce/power/status columns, preview/apply, and marking a Planned upgrade installed. The filter was preserved, and all edits completed with zero document navigations or JavaScript errors. [Results](import-checks.json).
+
+| Theme | CSV preview | Installed action |
+| --- | --- | --- |
+| Flatly | [Preview](csv-flatly.png) | [Planner](installed-flatly.png) |
+| Darkly | [Preview](csv-darkly.png) | [Planner](installed-darkly.png) |
+| Materia | [Preview](csv-materia.png) | [Planner](installed-materia.png) |

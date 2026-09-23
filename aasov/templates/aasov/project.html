@@ -7,6 +7,7 @@
   <label for="project-switch" class="visually-hidden">Project</label><select id="project-switch" class="form-select form-select-sm sov-project-switch">
     {% for p in projects %}<option value="{% url 'aasov:project' p.pk %}" {% if p.pk == project.pk %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
   </select>
+  {% if can_manage %}<a data-sov-edit class="btn btn-sm btn-primary" href="{% url 'aasov:csv_upload' project.pk %}">Import CSV</a>{% endif %}
   <a class="btn btn-sm btn-secondary" href="{% url 'aasov:index' %}">All projects</a>
 </div>
 <div class="d-flex flex-wrap gap-2 align-items-start mb-2">
