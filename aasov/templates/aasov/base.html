@@ -4,10 +4,11 @@
 {% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'aasov/planner.css' %}">{% endblock %}
 {% block content %}
 <div class="container-fluid sov-planner">
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-    <div><h1 class="h2 mb-1">{% trans 'Sovereignty Planner' %}</h1><p class="text-body-secondary mb-0">{% trans 'Plan infrastructure. Balance resources. Connect your space.' %}</p></div>
+  {% block planner_heading %}<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <div><h1 class="h4 mb-0">{% trans 'Sovereignty Planner' %}</h1></div>
     <a class="btn btn-secondary" href="{% url 'aasov:index' %}">{% trans 'All projects' %}</a>
   </div>
+  {% endblock %}
   {% block planner_content %}{% endblock %}
 </div>
 {% endblock %}

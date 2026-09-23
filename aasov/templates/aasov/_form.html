@@ -1,17 +1,19 @@
 <form method="post" action="{{ action }}" data-sov-form {% if preview_url %}data-route-preview="{{ preview_url }}"{% endif %}>
 {% csrf_token %}
+{% if explanation %}<p>{{ explanation }}</p>{% endif %}
   {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
-  {% for field in form %}<div class="mb-3">
+  {% if optimisation_rows %}{% include "aasov/_optimisation.html" %}{% endif %}
+  {% for field in form %}{% if field.is_hidden %}{{ field }}{% else %}<div class="mb-3">
     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
     {{ field }}{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
     {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
-  </div>{% endfor %}
+  </div>{% endif %}{% endfor %}
   {% if preview_url %}
     <div class="alert alert-secondary" data-route-result aria-live="polite">Choose source and destination to check the stargate path.</div>
     <p class="small">Saving sets the source to Export and the destination to Import. Only Transit systems can be intermediate stops. Existing routes are protected; maximum three sources per importer and one destination per exporter.</p>
   {% endif %}
   {% if repeat %}<div class="form-check mb-3 sov-repeat" hidden><input class="form-check-input" type="checkbox" id="sov-add-another" checked><label class="form-check-label" for="sov-add-another">Keep open to add another upgrade</label></div>{% endif %}
-  <button class="btn btn-primary" type="submit">Save</button>
+  <button class="btn btn-primary" type="submit" {% if disable_submit %}disabled{% endif %}>{{ submit_label|default:"Save" }}</button>
   <a class="btn btn-secondary" data-sov-cancel href="{% url 'aasov:project' project.pk %}">Cancel</a>
 </form>
-<p class="text-body-secondary small mt-3 mb-0">Negative budgets are allowed and flagged in the plan.</p>
+{% if not hide_budget_note %}<p class="text-body-secondary small mt-3 mb-0">Negative budgets are allowed and flagged in the plan.</p>{% endif %}

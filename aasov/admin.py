@@ -27,15 +27,15 @@ class ProjectAdmin(admin.ModelAdmin):
     form = ProjectAdminForm
     list_display = ("name", "updated_at")
     search_fields = ("name",)
-    filter_horizontal = ("regions", "selected_systems")
+    filter_horizontal = ("regions", "selected_systems", "excluded_systems")
     readonly_fields = ("updated_at",)
     fieldsets = (
         (None, {"fields": ("name", "description", "updated_at")}),
         (
             "Add systems to this project",
             {
-                "fields": ("regions", "selected_systems"),
-                "description": "Regions add all player-claimable nullsec systems. Selections are combined and deduplicated. Saving adds missing systems without upgrades. Removing selections preserves existing plans.",
+                "fields": ("regions", "selected_systems", "excluded_systems"),
+                "description": "Regions add all player-claimable nullsec systems. Selections are combined and deduplicated. Saving adds missing systems without upgrades. Removing selections preserves existing plans. Excluded systems stay removed; clear an exclusion and save to add the system again.",
             },
         ),
     )

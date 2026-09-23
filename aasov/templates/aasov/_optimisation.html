@@ -1,0 +1,12 @@
+{% load humanize %}
+<p>Priorities: maximise level III upgrades, then II, then I. At equal levels, prefer Major over Minor. A higher-level upgrade outweighs any combination of lower levels.</p>
+<p class="small">Replans ratting upgrades and workforce routes within this constellation. Non-ratting upgrades and boundary routes are preserved. Replaced tiers become Offline; additions become Planned; retained Online upgrades stay Online. Fuel supply is not checked.</p>
+{% if optimal %}<div class="alert alert-success">Optimal ratting score found for these constraints.</div>{% else %}<div class="alert alert-warning">Time limit reached. This is a feasible plan, but the best possible score has not been proven.</div>{% endif %}
+<div class="table-responsive"><table class="table table-sm"><thead><tr><th>System</th><th>Current active ratting</th><th>Proposed active ratting</th><th>Mode</th><th>Power left</th><th>Workforce left</th></tr></thead><tbody>
+{% for row in optimisation_rows %}<tr><th>{{ row.system }}</th><td>{% for old in row.old %}<div>{{ old.upgrade.item_type.name }}</div>{% empty %}None{% endfor %}</td><td>{% for upgrade in row.upgrades %}<div>{{ upgrade.item_type.name }}</div>{% empty %}None{% endfor %}</td><td>{{ row.mode|title }}</td><td>{{ row.power|intcomma }}</td><td>{{ row.workforce|intcomma }}</td></tr>{% endfor %}
+</tbody></table></div>
+<h3 class="h6">Current internal routes to replace</h3>
+{% for row in removed_routes %}<div>{{ row.route.source }} → {{ row.route.destination }} · {{ row.route.amount|intcomma }}</div>{% empty %}<p>None.</p>{% endfor %}
+<h3 class="h6 mt-3">Proposed internal routes</h3>
+{% for row in optimisation_routes %}<div>{{ row.source }} → {{ row.destination }} · {{ row.amount|intcomma }} workforce<div class="small text-body-secondary">{% for node in row.path %}{{ node }}{% if not forloop.last %} → {% endif %}{% endfor %}</div></div>{% empty %}<p>No internal transfers needed.</p>{% endfor %}
+<p class="small mt-2">This preview expires in 15 minutes. Changes to the plan or SDE require a new preview.</p>

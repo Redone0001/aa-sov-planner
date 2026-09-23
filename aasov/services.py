@@ -26,16 +26,21 @@ def sync_project(project):
                 Q(pk__in=project.selected_systems.values("pk"))
                 | Q(constellation__region__in=project.regions.values("pk"))
             )
+            .exclude(pk__in=project.excluded_systems.values("pk"))
             .values_list("pk", flat=True)
         )
         existing = set(project.systems.values_list("solar_system_id", flat=True))
+        new_ids = [pk for pk in selected if pk not in existing]
         PlannedSystem.objects.bulk_create(
-            [
-                PlannedSystem(project=project, solar_system_id=pk)
-                for pk in selected
-                if pk not in existing
-            ]
+            [PlannedSystem(project=project, solar_system_id=pk) for pk in new_ids]
         )
+
+        if new_ids:
+            from .tasks import snapshot_ownership
+
+            transaction.on_commit(
+                lambda: snapshot_ownership.delay(project.pk, new_ids), robust=True
+            )
 
 
 def project_graph(project_id):
@@ -140,8 +145,10 @@ def calculate_project(project):
             b.warnings.append(
                 "SDE resource data is incomplete. Reload the SDE before relying on this budget."
             )
-    upgrades = PlannedUpgrade.objects.filter(system__project=project).select_related(
-        "upgrade__item_type", "upgrade__fuel_item_type"
+    upgrades = (
+        PlannedUpgrade.objects.filter(system__project=project)
+        .select_related("upgrade__item_type", "upgrade__fuel_item_type")
+        .order_by("pk")
     )
     groups = defaultdict(Counter)
     for planned in upgrades:
@@ -173,9 +180,9 @@ def calculate_project(project):
             total["hourly"] += fuel["hourly"]
             total["startup"] += fuel["startup"]
     routes = list(
-        WorkforceRoute.objects.filter(source__project=project).select_related(
-            "source__solar_system", "destination__solar_system"
-        )
+        WorkforceRoute.objects.filter(source__project=project)
+        .select_related("source__solar_system", "destination__solar_system")
+        .order_by("pk")
     )
     route_rows = []
     for route in routes:
@@ -220,8 +227,21 @@ def calculate_project(project):
             b.warnings.append(
                 "Conflicting active upgrades: mutually exclusive upgrades cannot operate together."
             )
+    ordered = sorted(
+        budgets.values(),
+        key=lambda b: (
+            b.system.solar_system.constellation.name,
+            b.system.solar_system.constellation_id,
+            b.system.solar_system.name,
+        ),
+    )
+    constellations = {}
+    for b in ordered:
+        c = b.system.solar_system.constellation
+        constellations.setdefault(c.pk, {"constellation": c, "budgets": []})["budgets"].append(b)
     return {
-        "budgets": list(budgets.values()),
+        "budgets": ordered,
+        "constellations": list(constellations.values()),
         "routes": route_rows,
         "fuel_totals": list(fuel_totals.values()),
         "warning_count": sum(bool(b.warnings) for b in budgets.values()),
@@ -332,3 +352,14 @@ def remove_item(project_id, kind, item_id):
 
 def touch(project):
     Project.objects.filter(pk=project.pk).update(updated_at=timezone.now())
+
+
+@transaction.atomic
+def remove_system(project_id, system_id):
+    project = Project.objects.select_for_update().get(pk=project_id)
+    system = project.systems.get(pk=system_id)
+    project.excluded_systems.add(system.solar_system_id)
+    system.delete()
+    # Endpoint routes cascade. Routes using this system for transit remain visible
+    # with invalid-path warnings unless an alternative transit path exists.
+    touch(project)

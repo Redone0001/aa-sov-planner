@@ -1,79 +1,84 @@
 {% load humanize %}
-<div class="d-flex flex-wrap gap-3 align-items-center mb-3">
-  <span class="badge text-bg-secondary">{{ budgets|length }} system{{ budgets|length|pluralize }}</span>
-  <span class="badge {% if warning_count %}text-bg-danger{% else %}text-bg-success{% endif %}">{{ warning_count }} system{{ warning_count|pluralize }} with warnings</span>
-  <span class="badge text-bg-secondary">{% if can_edit %}Editor{% else %}Read only{% endif %}</span>
-
+<div class="d-flex flex-wrap gap-2 align-items-center mb-2 small">
+  <span class="badge text-bg-secondary">{{ budgets|length }} systems</span>
+  <span class="badge {% if warning_count %}text-bg-danger{% else %}text-bg-success{% endif %}">{{ warning_count }} systems with warnings</span>
+  <span class="badge text-bg-secondary">{% if can_manage %}Plan Manager{% elif can_edit %}Editor{% else %}Read only{% endif %}</span>
 </div>
 <div class="table-responsive"><table class="table table-hover align-middle sov-table">
-  <caption>Remaining resource bars are capped at 0–100%; numbers always show the full balance.</caption>
-  <thead><tr><th scope="col">System / workforce mode</th><th scope="col">Power</th><th scope="col">Workforce</th><th scope="col">Upgrades</th></tr></thead>
-  <tbody>
-  {% for b in budgets %}<tr id="system-{{ b.system.pk }}" class="sov-system-row {% if b.warnings %}sov-warning{% endif %}">
-    <th scope="row">
-      <div class="h6 mb-1">{{ b.system.solar_system.name }} {% if b.warnings %}<span class="text-danger" aria-label="Warning">⚠</span>{% endif %}</div>
-      <div class="small fw-normal text-body-secondary">{{ b.system.solar_system.constellation.name }}</div>
-      <span class="badge text-bg-secondary mt-2">{{ b.system.get_mode_display }}</span>
-      {% if can_edit %}<a data-sov-edit class="small ms-1" href="{% url 'aasov:mode' project.pk b.system.pk %}">Change</a>{% endif %}
-      <div class="small fw-normal mt-2">
-        {% for r in b.imports %}<div>Imports {{ r.route.amount|intcomma }} from <strong>{{ r.route.source }}</strong>{% if not r.valid %} <span class="text-danger">⚠ Invalid path</span>{% endif %}
-          {% if can_edit %}<a data-sov-edit href="{% url 'aasov:route_edit' project.pk r.route.pk %}">Edit route</a>{% endif %}
-          <div class="text-body-secondary">{% for node in r.path %}{{ node }}{% if not forloop.last %} → {% endif %}{% endfor %}</div>
-        </div>{% endfor %}
-        {% for r in b.exports %}<div>Exports {{ r.route.amount|intcomma }} to <strong>{{ r.route.destination }}</strong>{% if not r.valid %} <span class="text-danger">⚠ Invalid path</span>{% endif %}
-          {% if can_edit %}<a data-sov-edit href="{% url 'aasov:route_edit' project.pk r.route.pk %}">Edit route</a>{% endif %}
-          <div class="text-body-secondary">{% for node in r.path %}{{ node }}{% if not forloop.last %} → {% endif %}{% endfor %}</div>
-        </div>{% endfor %}
-        {% for r in b.transit_routes %}<div>Transit: {{ r.route.source }} → {{ r.route.destination }}</div>{% endfor %}
-      </div>
-      {% if can_edit %}<div class="d-flex gap-2 flex-wrap mt-2">
-        {% if b.system.mode != 'export' %}<a data-sov-edit class="btn btn-sm btn-secondary" href="{% url 'aasov:route_add' project.pk %}?destination={{ b.system.pk }}">Import from…</a>{% endif %}
-        {% if b.system.mode != 'import' and not b.exports %}<a data-sov-edit class="btn btn-sm btn-secondary" href="{% url 'aasov:route_add' project.pk %}?source={{ b.system.pk }}">Export to…</a>{% endif %}
-      </div>{% endif %}
-      {% if b.transiting %}<div class="small fw-normal mt-1">{{ b.transiting|intcomma }} in transit (not local)</div>{% endif %}
-      {% for warning in b.warnings %}<div class="text-danger small fw-normal mt-2" role="status">⚠ {{ warning }}</div>{% endfor %}
-    </th>
-    <td>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Initial</span><span>{{ b.initial_power|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Generated</span><span>+{{ b.power_generated|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Used</span><span>{{ b.power_used|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Imported</span><span>0 · local only</span></div>
-      <div class="d-flex justify-content-between gap-3 fw-bold {% if b.power_left < 0 %}text-danger{% endif %}"><span>Left</span><span>{{ b.power_left|intcomma }}</span></div>
-      <div class="progress mt-2 {% if b.power_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} power remaining" aria-valuenow="{{ b.power_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.power_left }} power remaining"><div class="progress-bar {% if b.power_left < 0 %}bg-danger{% else %}bg-primary{% endif %}" style="width: {{ b.power_percent }}%"></div></div>
-    </td>
-    <td>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Initial</span><span>{{ b.initial_workforce|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Generated (local)</span><span>+{{ b.workforce_generated|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Imported / exported</span><span>+{{ b.imported|intcomma }} / −{{ b.exported|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3"><span class="text-body-secondary">Used</span><span>{{ b.workforce_used|intcomma }}</span></div>
-      <div class="d-flex justify-content-between gap-3 fw-bold {% if b.workforce_left < 0 %}text-danger{% endif %}"><span>Left</span><span>{{ b.workforce_left|intcomma }}</span></div>
-      <div class="progress mt-2 {% if b.workforce_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} workforce remaining" aria-valuenow="{{ b.workforce_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.workforce_left }} workforce remaining"><div class="progress-bar {% if b.workforce_left < 0 %}bg-danger{% else %}bg-success{% endif %}" style="width: {{ b.workforce_percent }}%"></div></div>
-      <div class="progress mt-1" role="progressbar" aria-label="{{ b.system }} imported share of workforce" aria-valuenow="{{ b.import_percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-info" style="width: {{ b.import_percent }}%"></div></div><small class="text-body-secondary">Imported share: {{ b.import_percent }}%</small>
-    </td>
-    <td>
-      {% for u in b.upgrades %}<div class="mb-2">
-        <div>{{ u.upgrade.item_type.name }} <span class="badge {% if u.status == 'online' %}text-bg-success{% elif u.status == 'planned' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">{{ u.get_status_display }}</span></div>
-        <small class="text-body-secondary">Power {{ u.upgrade.power_allocation|default_if_none:0|intcomma }} · Workforce {{ u.upgrade.workforce_allocation|default_if_none:0|intcomma }}{% if u.upgrade.power_production %} · +{{ u.upgrade.power_production|intcomma }} power{% endif %}{% if u.upgrade.workforce_production %} · +{{ u.upgrade.workforce_production|intcomma }} workforce{% endif %}</small>
-        {% if u.upgrade.fuel_item_type_id %}<div class="small text-body-secondary">{{ u.upgrade.fuel_item_type.name }}: {{ u.upgrade.hourly_upkeep|default_if_none:0|intcomma }}/h · {{ u.upgrade.startup_cost|default_if_none:0|intcomma }} startup{% if u.status == 'offline' %} (inactive){% endif %}</div>{% endif %}
-        {% if can_edit %}<div class="d-flex gap-2 align-items-center"><a data-sov-edit class="small" href="{% url 'aasov:upgrade_edit' project.pk b.system.pk u.pk %}">Edit</a><form data-sov-delete method="post" action="{% url 'aasov:remove' project.pk 'upgrade' u.pk %}">{% csrf_token %}<button class="btn btn-link btn-sm text-danger p-0" type="submit" aria-label="Remove {{ u.upgrade.item_type.name }} from {{ b.system }}">Remove</button></form></div>{% endif %}
-      </div>{% empty %}<p class="small text-body-secondary">No upgrades planned.</p>{% endfor %}
-      {% if can_edit %}<a data-sov-edit class="btn btn-sm btn-primary" href="{% url 'aasov:upgrade_add' project.pk b.system.pk %}">Add upgrade</a>{% endif %}
-    </td>
-  </tr>{% empty %}<tr><td colspan="4">No eligible systems. Add player-claimable nullsec systems or regions in administration and make sure the SDE is loaded.</td></tr>{% endfor %}
-  </tbody>
+  <caption>Remaining resource bars are capped at 0–100%; numbers show the full balance. Expand Details for fuel and transit paths.</caption>
+  <thead><tr><th scope="col">System / owner / workforce mode</th><th scope="col">Power</th><th scope="col">Workforce</th><th scope="col">Upgrades</th></tr></thead>
+  {% for group in constellations %}
+  <tbody data-constellation="{{ group.constellation.pk }}">
+    <tr class="sov-constellation table-active"><th colspan="4" scope="rowgroup"><div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-secondary" type="button" data-sov-collapse aria-expanded="true" aria-label="Toggle {{ group.constellation.name }}">▾</button>
+      <span>{{ group.constellation.name }}</span><span class="badge text-bg-secondary">{{ group.budgets|length }}</span>
+      {% if can_edit %}<a data-sov-edit class="btn btn-sm btn-primary ms-auto" href="{% url 'aasov:best_ratting' project.pk group.constellation.pk %}">Best ratting</a>{% endif %}
+    </div></th></tr>
+    {% for b in group.budgets %}<tr id="system-{{ b.system.pk }}" class="sov-system-row {% if b.warnings %}sov-warning{% endif %}">
+      <th scope="row">
+        <div class="fw-bold">{{ b.system.solar_system.name }} {% if b.warnings %}<span class="text-danger" aria-label="Warning">⚠</span>{% endif %}</div>
+        <div class="small fw-normal text-body-secondary" {% if b.system.owner_observed_at %}title="Ownership captured {{ b.system.owner_observed_at|date:'Y-m-d H:i T' }}"{% endif %}>Owner: {% if b.system.owner_observed_at %}{{ b.system.owner_name }}{% else %}Not captured yet{% endif %}</div>
+        <div class="d-flex flex-wrap gap-2 align-items-center mt-1"><span class="badge text-bg-secondary">{{ b.system.get_mode_display }}</span>
+          {% if can_edit %}<a data-sov-edit class="small" href="{% url 'aasov:mode' project.pk b.system.pk %}">Change</a>
+          {% if b.system.mode != 'export' %}<a data-sov-edit class="small" href="{% url 'aasov:route_add' project.pk %}?destination={{ b.system.pk }}">Import from…</a>{% endif %}
+          {% if b.system.mode != 'import' and not b.exports %}<a data-sov-edit class="small" href="{% url 'aasov:route_add' project.pk %}?source={{ b.system.pk }}">Export to…</a>{% endif %}{% endif %}
+          {% if can_manage %}<a data-sov-edit class="small text-danger" href="{% url 'aasov:system_remove' project.pk b.system.pk %}">Remove system</a>{% endif %}
+        </div>
+        <div class="small fw-normal">
+          {% for r in b.imports %}<div>Imports {{ r.route.amount|intcomma }} from <strong>{{ r.route.source }}</strong>{% if can_edit %} · <a data-sov-edit href="{% url 'aasov:route_edit' project.pk r.route.pk %}">Edit route</a>{% endif %}</div>{% endfor %}
+          {% for r in b.exports %}<div>Exports {{ r.route.amount|intcomma }} to <strong>{{ r.route.destination }}</strong>{% if can_edit %} · <a data-sov-edit href="{% url 'aasov:route_edit' project.pk r.route.pk %}">Edit route</a>{% endif %}</div>{% endfor %}
+          {% if b.transiting %}<div>{{ b.transiting|intcomma }} in transit (not local)</div>{% endif %}
+        </div>
+        {% for warning in b.warnings %}<div class="text-danger small fw-normal" role="status">⚠ {{ warning }}</div>{% endfor %}
+        <details class="small fw-normal sov-details" data-details-key="system-{{ b.system.pk }}"><summary>Details</summary>
+          <div>Constellation: {{ group.constellation.name }}</div>
+          {% if b.system.owner_observed_at %}<div>Ownership captured {{ b.system.owner_observed_at|date:'Y-m-d H:i T' }}</div>{% endif %}
+          {% for r in b.imports %}<div>{% for node in r.path %}{{ node }}{% if not forloop.last %} → {% endif %}{% empty %}Invalid path{% endfor %}</div>{% endfor %}
+          {% for r in b.exports %}<div>{% for node in r.path %}{{ node }}{% if not forloop.last %} → {% endif %}{% empty %}Invalid path{% endfor %}</div>{% endfor %}
+          {% for r in b.transit_routes %}<div>Transit: {{ r.route.source }} → {{ r.route.destination }}</div>{% endfor %}
+        </details>
+      </th>
+      <td>
+        <div class="sov-resource"><span>Initial</span><span>{{ b.initial_power|intcomma }}</span></div>
+        <div class="sov-resource"><span>Used / generated</span><span>{{ b.power_used|intcomma }} / +{{ b.power_generated|intcomma }}</span></div>
+        <div class="sov-resource fw-bold {% if b.power_left < 0 %}text-danger{% endif %}"><span>Left</span><span>{{ b.power_left|intcomma }}</span></div>
+        <div class="progress mt-1 {% if b.power_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} power remaining" aria-valuenow="{{ b.power_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.power_left }} power remaining"><div class="progress-bar {% if b.power_left < 0 %}bg-danger{% else %}bg-primary{% endif %}" style="width: {{ b.power_percent }}%"></div></div>
+        <small class="text-body-secondary">Imported: 0 · local only</small>
+      </td>
+      <td>
+        <div class="sov-resource"><span>Initial</span><span>{{ b.initial_workforce|intcomma }}</span></div>
+        <div class="sov-resource"><span>Used / generated</span><span>{{ b.workforce_used|intcomma }} / +{{ b.workforce_generated|intcomma }}</span></div>
+        <div class="sov-resource"><span>Import / export</span><span>+{{ b.imported|intcomma }} / −{{ b.exported|intcomma }}</span></div>
+        <div class="sov-resource fw-bold {% if b.workforce_left < 0 %}text-danger{% endif %}"><span>Left</span><span>{{ b.workforce_left|intcomma }}</span></div>
+        <div class="progress mt-1 {% if b.workforce_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} workforce remaining" aria-valuenow="{{ b.workforce_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.workforce_left }} workforce remaining"><div class="progress-bar {% if b.workforce_left < 0 %}bg-danger{% else %}bg-success{% endif %}" style="width: {{ b.workforce_percent }}%"></div></div>
+        <div class="progress mt-1" role="progressbar" aria-label="{{ b.system }} imported share of workforce" aria-valuenow="{{ b.import_percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-info" style="width: {{ b.import_percent }}%"></div></div><small class="text-body-secondary">Imported share: {{ b.import_percent }}%</small>
+      </td>
+      <td>
+        {% for u in b.upgrades %}<div class="sov-upgrade d-flex align-items-start gap-2">
+          <div class="flex-grow-1">{{ u.upgrade.item_type.name }} <span class="badge {% if u.status == 'online' %}text-bg-success{% elif u.status == 'planned' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">{{ u.get_status_display }}</span></div>
+          {% if can_edit %}<a data-sov-edit class="small" href="{% url 'aasov:upgrade_edit' project.pk b.system.pk u.pk %}">Edit</a><form data-sov-delete method="post" action="{% url 'aasov:remove' project.pk 'upgrade' u.pk %}">{% csrf_token %}<button class="btn btn-link btn-sm text-danger p-0" type="submit" aria-label="Remove {{ u.upgrade.item_type.name }} from {{ b.system }}">×</button></form>{% endif %}
+        </div>{% empty %}<span class="small text-body-secondary">No upgrades planned.</span>{% endfor %}
+        <div class="d-flex align-items-center gap-3 mt-1">
+          {% if can_edit %}<a data-sov-edit class="btn btn-sm btn-primary" href="{% url 'aasov:upgrade_add' project.pk b.system.pk %}">Add upgrade</a>{% endif %}
+          {% if b.upgrades %}<details class="small sov-details" data-details-key="upgrades-{{ b.system.pk }}"><summary>Costs / fuel</summary>
+            {% for u in b.upgrades %}<div>{{ u.upgrade.item_type.name }}: Power {{ u.upgrade.power_allocation|default_if_none:0|intcomma }} · Workforce {{ u.upgrade.workforce_allocation|default_if_none:0|intcomma }}{% if u.upgrade.fuel_item_type_id %} · {{ u.upgrade.fuel_item_type.name }} {{ u.upgrade.hourly_upkeep|default_if_none:0|intcomma }}/h · {{ u.upgrade.startup_cost|default_if_none:0|intcomma }} startup{% endif %}</div>{% endfor %}
+          </details>{% endif %}
+        </div>
+      </td>
+    </tr>{% endfor %}
+  </tbody>{% empty %}<tbody><tr><td colspan="4">No eligible systems. Add player-claimable nullsec systems or regions in administration and make sure the SDE is loaded.</td></tr></tbody>{% endfor %}
 </table></div>
 <p id="filter-empty" class="alert alert-info" hidden>No systems match your filter.</p>
-<div class="row g-3 mt-2">
-<div class="col-xl-8"><div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h3 class="h5 mb-0">Workforce routes</h3>{% if can_edit %}<a data-sov-edit class="btn btn-sm btn-primary" href="{% url 'aasov:route_add' project.pk %}">Add route</a>{% endif %}</div><div class="card-body">
-<p class="small text-body-secondary">One destination per exporter, up to three sources per importer. Paths follow stargates through this project's Transit systems.</p>
-{% for r in routes %}<div class="border-top pt-2 mb-3">
-  <div><strong>{{ r.route.source }} → {{ r.route.destination }}</strong> · {{ r.route.amount|intcomma }} workforce {% if not r.valid %}<span class="text-danger">⚠ Invalid route — not counted</span>{% endif %}</div>
-  <div class="small text-body-secondary">{% for system in r.path %}{{ system }}{% if not forloop.last %} → {% endif %}{% endfor %}</div>
-  {% if can_edit %}<div class="d-flex gap-2"><a data-sov-edit href="{% url 'aasov:route_edit' project.pk r.route.pk %}">Edit</a><form data-sov-delete method="post" action="{% url 'aasov:remove' project.pk 'route' r.route.pk %}">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Remove</button></form></div>{% endif %}
-</div>{% empty %}<p class="mb-0">No workforce routes planned.</p>{% endfor %}
-</div></div></div>
-<div class="col-xl-4"><div class="card"><div class="card-header"><h3 class="h5 mb-0">Fuel requirements</h3></div><div class="card-body">
-{% for fuel in fuel_totals %}<p><strong>{{ fuel.name }}</strong><br>{{ fuel.hourly|intcomma }} / hour<br>{{ fuel.startup|intcomma }} to start planned upgrades</p>{% empty %}<p>No fuel-consuming active upgrades.</p>{% endfor %}
-<p class="small text-body-secondary mb-0">Includes planned and online upgrades. Fuel must be supplied separately; stock and delivery are not tracked.</p>
-</div></div></div>
-</div>
+<details class="sov-details mb-2" data-details-key="routes"><summary class="h6">Workforce routes ({{ routes|length }})</summary>
+  {% if can_edit %}<a data-sov-edit class="btn btn-sm btn-primary mb-2" href="{% url 'aasov:route_add' project.pk %}">Add route</a>{% endif %}
+  <p class="small text-body-secondary">One destination per exporter, up to three sources per importer. Paths follow stargates through this project's Transit systems.</p>
+  {% for r in routes %}<div class="border-top py-1">
+    <strong>{{ r.route.source }} → {{ r.route.destination }}</strong> · {{ r.route.amount|intcomma }} workforce {% if not r.valid %}<span class="text-danger">⚠ Invalid route — not counted</span>{% endif %}
+    <div class="small text-body-secondary">{% for system in r.path %}{{ system }}{% if not forloop.last %} → {% endif %}{% endfor %}</div>
+    {% if can_edit %}<div class="d-flex gap-2"><a data-sov-edit href="{% url 'aasov:route_edit' project.pk r.route.pk %}">Edit</a><form data-sov-delete method="post" action="{% url 'aasov:remove' project.pk 'route' r.route.pk %}">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Remove</button></form></div>{% endif %}
+  </div>{% empty %}<p>No workforce routes planned.</p>{% endfor %}
+</details>
+<details class="sov-details" data-details-key="fuel"><summary class="h6">Fuel requirements</summary>
+  {% for fuel in fuel_totals %}<div><strong>{{ fuel.name }}</strong>: {{ fuel.hourly|intcomma }} / hour · {{ fuel.startup|intcomma }} to start planned upgrades</div>{% empty %}<p>No fuel-consuming active upgrades.</p>{% endfor %}
+  <p class="small text-body-secondary">Includes planned and online upgrades. Fuel must be supplied separately; stock and delivery are not tracked.</p>
+</details>

@@ -31,3 +31,17 @@ All screenshots use synthetic demonstration data.
 ## Inline editing (0.1.3)
 
 Browser checks in Flatly, Darkly and Materia cover adding/removing upgrades, repeat-add dialogs, valid and invalid transit previews, and saving routes. All completed with zero document navigations and no JavaScript errors. See [results](inline-checks.json) and route dialogs: [Flatly](route-flatly.png), [Darkly](route-darkly.png), [Materia](route-materia.png).
+
+## Compact constellation planner (0.2.0)
+
+Flatly, Darkly and Materia were checked with the compact header and constellation groups. At 1600×1080, five full system rows fit (including examples with multiple upgrades). Browser checks cover collapse/filter interaction, remembered status within repeated additions and across systems, the Plan Manager removal dialog, ratting preview and application, and mobile page overflow. No document navigations or JavaScript errors occurred during in-page edits.
+
+[Browser results](expansion-checks.json)
+
+| Theme | Compact planner | Ratting preview |
+| --- | --- | --- |
+| Flatly | [Planner](compact-flatly.png) | [Preview](ratting-flatly.png) |
+| Darkly | [Planner](compact-darkly.png) | [Preview](ratting-darkly.png) |
+| Materia | [Planner](compact-materia.png) | [Preview](ratting-materia.png) |
+
+All screenshots use synthetic systems, alliances and upgrade values. Visible row count depends on viewport size, warnings and upgrade count.

@@ -1,17 +1,21 @@
 {% extends 'aasov/base.html' %}
 {% load static humanize %}
+{% block planner_heading %}{% endblock %}
 {% block planner_content %}
-<div class="d-flex justify-content-between flex-wrap gap-3 align-items-center mb-3">
-  <div><h2 class="h3 mb-1">{{ project.name }}</h2><p class="mb-0">{{ project.description }}</p></div>
-  <div><label for="project-switch" class="form-label">Project</label><select id="project-switch" class="form-select">
+<div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+  <h1 class="h4 mb-0 me-auto">{{ project.name }}</h1>
+  <label for="project-switch" class="visually-hidden">Project</label><select id="project-switch" class="form-select form-select-sm sov-project-switch">
     {% for p in projects %}<option value="{% url 'aasov:project' p.pk %}" {% if p.pk == project.pk %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
-  </select></div>
+  </select>
+  <a class="btn btn-sm btn-secondary" href="{% url 'aasov:index' %}">All projects</a>
 </div>
-<div class="alert alert-info small">Budgets use SDE potential with all skyhooks active. This is a plan for systems controlled by one alliance, not live sovereignty or fuel inventory. Planned + online upgrades count; offline upgrades do not. Power and upgrade-generated workforce stay local.</div>
-<div class="mb-3">  <label for="system-filter" class="visually-hidden">Filter systems</label><input id="system-filter" class="form-control sov-search ms-auto" type="search" placeholder="Filter systems or upgrades…"></div>
+<div class="d-flex flex-wrap gap-2 align-items-start mb-2">
+  <details class="small flex-grow-1"><summary>About this plan / assumptions</summary><p>{{ project.description }}</p><div class="text-body-secondary">Budgets use SDE potential with all skyhooks active. This is a plan for systems controlled by one alliance, not live sovereignty or fuel inventory. Planned + online upgrades count; offline upgrades do not. Power and upgrade-generated workforce stay local.</div></details>
+  <label for="system-filter" class="visually-hidden">Filter systems</label><input id="system-filter" class="form-control form-control-sm sov-search" type="search" placeholder="Filter systems or upgrades…">
+</div>
 <div id="sov-feedback" class="alert" role="status" hidden></div>
 <div id="sov-board">{% include 'aasov/_board.html' %}</div>
-{% if can_edit %}
+{% if can_edit or can_manage %}
 <div class="modal fade" id="sov-editor" tabindex="-1" aria-labelledby="sov-editor-title" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
     <div class="modal-header"><h2 class="modal-title h5" id="sov-editor-title">Edit plan</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>

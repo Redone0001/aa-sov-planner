@@ -1,11 +1,23 @@
 .sov-planner { max-width: 1800px; }
 .sov-table { min-width: 1000px; font-variant-numeric: tabular-nums; }
-.sov-table td, .sov-table th { padding: 1rem; vertical-align: top; }
-.sov-table th:first-child { width: 23%; }
-.sov-table td:nth-child(2) { width: 19%; }
-.sov-table td:nth-child(3) { width: 24%; }
+.sov-table td, .sov-table th { padding: .45rem .65rem; vertical-align: top; }
+.sov-table th:first-child { width: 27%; }
+.sov-table td:nth-child(2) { width: 17%; }
+.sov-table td:nth-child(3) { width: 23%; }
 .sov-table .progress { height: .55rem; }
 .sov-warning > th { border-left: 3px solid var(--bs-danger); }
 .sov-deficit { outline: 1px solid var(--bs-danger); background-color: var(--bs-danger-bg-subtle, rgba(220,53,69,.2)); }
 .sov-search { max-width: 22rem; }
 .sov-form { max-width: 48rem; }
+
+.sov-table { font-size: .875rem; line-height: 1.35; }
+.sov-resource { display: flex; justify-content: space-between; gap: .6rem; }
+.sov-resource > span:first-child { color: var(--bs-secondary-color); }
+.sov-resource.text-danger > span { color: inherit; }
+.sov-upgrade { margin-bottom: .25rem; }
+.sov-table .btn-sm { padding: .15rem .4rem; font-size: .8rem; }
+.sov-details summary { cursor: pointer; }
+.sov-constellation th { padding-block: .35rem; }
+
+.sov-project-switch { width: auto; max-width: 20rem; }
+#sov-feedback { padding: .3rem .6rem; margin-bottom: .5rem; font-size: .875rem; }

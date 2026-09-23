@@ -7,11 +7,17 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     regions = models.ManyToManyField("eve_sde.Region", blank=True)
     selected_systems = models.ManyToManyField("eve_sde.SolarSystem", blank=True)
+    excluded_systems = models.ManyToManyField(
+        "eve_sde.SolarSystem", blank=True, related_name="excluded_sov_projects"
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ("name",)
-        permissions = [("edit_plan", "Can edit sovereignty plans")]
+        permissions = [
+            ("edit_plan", "Can edit sovereignty plans"),
+            ("manage_plan", "Plan Manager: can remove systems from plans"),
+        ]
 
     def __str__(self):
         return self.name
@@ -26,6 +32,11 @@ class PlannedSystem(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="systems")
     solar_system = models.ForeignKey("eve_sde.SolarSystem", on_delete=models.PROTECT)
     mode = models.CharField(max_length=7, choices=Mode.choices, default=Mode.TRANSIT)
+
+    owner_id = models.BigIntegerField(null=True, blank=True)
+    owner_name = models.CharField(max_length=255, blank=True)
+    owner_kind = models.CharField(max_length=12, default="unknown")
+    owner_observed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ("solar_system__name",)

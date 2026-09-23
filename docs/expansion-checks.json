@@ -1,0 +1,35 @@
+{
+  "report": [
+    {
+      "theme": "flatly",
+      "fullyVisibleAt1600x1080": 5,
+      "rememberedStatus": true,
+      "constellationCollapseFilter": true,
+      "managerDialog": true,
+      "rattingPreview": true,
+      "documentNavigations": 0,
+      "mobile": true
+    },
+    {
+      "theme": "darkly",
+      "fullyVisibleAt1600x1080": 5,
+      "rememberedStatus": true,
+      "constellationCollapseFilter": true,
+      "managerDialog": true,
+      "rattingPreview": true,
+      "documentNavigations": 0,
+      "mobile": true
+    },
+    {
+      "theme": "materia",
+      "fullyVisibleAt1600x1080": 5,
+      "rememberedStatus": true,
+      "constellationCollapseFilter": true,
+      "managerDialog": true,
+      "rattingPreview": true,
+      "documentNavigations": 0,
+      "mobile": true
+    }
+  ],
+  "errors": []
+}

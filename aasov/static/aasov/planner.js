@@ -4,6 +4,7 @@
     const editor = document.getElementById("sov-editor");
     const content = document.getElementById("sov-editor-content");
     const modal = editor && window.bootstrap ? new bootstrap.Modal(editor) : null;
+    const collapsed = new Set();
     let busy = false;
     let previewRequest = null;
     let previewSequence = 0;
@@ -13,9 +14,21 @@
     function filterRows() {
         const query = (document.getElementById("system-filter")?.value || "").trim().toLocaleLowerCase();
         const rows = [...document.querySelectorAll(".sov-system-row")];
-        for (const row of rows) row.hidden = !row.textContent.toLocaleLowerCase().includes(query);
+        for (const group of document.querySelectorAll("tbody[data-constellation]")) {
+            const matches = [...group.querySelectorAll(".sov-system-row")];
+            let count = 0;
+            for (const row of matches) {
+                const match = row.textContent.toLocaleLowerCase().includes(query);
+                if (match) count++;
+                row.hidden = !match || (!query && collapsed.has(group.dataset.constellation));
+            }
+            group.hidden = !count;
+            const button = group.querySelector("[data-sov-collapse]");
+            button.setAttribute("aria-expanded", query || !collapsed.has(group.dataset.constellation) ? "true" : "false");
+            button.textContent = button.getAttribute("aria-expanded") === "true" ? "▾" : "▸";
+        }
         const empty = document.getElementById("filter-empty");
-        if (empty) empty.hidden = !rows.length || rows.some(row => !row.hidden);
+        if (empty) empty.hidden = !query || !rows.length || rows.some(row => !row.hidden);
     }
     function feedback(id, message, danger = false) {
         const target = document.getElementById(id);
@@ -36,7 +49,9 @@
         const scrollAreas = [...document.querySelectorAll(".nav-padding.overflow-auto, .table-responsive")];
         const positions = scrollAreas.map(el => [el, el.scrollTop, el.scrollLeft]);
         const tableLeft = board.querySelector(".table-responsive")?.scrollLeft || 0;
+        const openDetails = new Set([...board.querySelectorAll("details[open][data-details-key]")].map(el => el.dataset.detailsKey));
         board.innerHTML = html;
+        for (const el of board.querySelectorAll("details[data-details-key]")) el.open = openDetails.has(el.dataset.detailsKey);
         filterRows();
         for (const [el, top, left] of positions) if (el.isConnected) { el.scrollTop = top; el.scrollLeft = left; }
         const table = board.querySelector(".table-responsive");
@@ -82,6 +97,12 @@
         if (form && ["source", "destination"].includes(event.target.name)) preview(form);
     });
     document.addEventListener("click", async event => {
+        const toggle = event.target.closest("[data-sov-collapse]");
+        if (toggle) {
+            const id = toggle.closest("tbody").dataset.constellation;
+            if (collapsed.has(id)) collapsed.delete(id); else collapsed.add(id);
+            filterRows(); return;
+        }
         const cancel = event.target.closest("[data-sov-cancel]");
         if (cancel && modal && editor.contains(cancel)) { event.preventDefault(); if (!busy) modal.hide(); return; }
         const link = event.target.closest("a[data-sov-edit]");
@@ -90,8 +111,9 @@
         if (busy) return;
         busy = true; opener = {href: link.href, row: link.closest("tr")?.id};
         document.getElementById("sov-editor-feedback").hidden = true;
-        document.getElementById("sov-editor-title").textContent = "Loading editor…";
-        content.textContent = "Loading…"; modal.show();
+        const optimising = link.textContent.trim() === "Best ratting";
+        document.getElementById("sov-editor-title").textContent = optimising ? "Optimising constellation…" : "Loading editor…";
+        content.textContent = optimising ? "Checking upgrades, resource budgets and workforce paths. This may take a few seconds…" : "Loading…"; modal.show();
         try {
             const data = await jsonRequest(link.href);
             document.getElementById("sov-editor-title").textContent = data.title;
@@ -120,7 +142,9 @@
             updateBoard(data.board);
             feedback("sov-feedback", data.message);
             if (editing && keepOpen) {
+                const status = form.elements.status?.value;
                 form.reset();
+                if (status) form.elements.status.value = status;
                 form.elements.upgrade.value = "";
                 form.querySelectorAll(".alert-danger, .text-danger").forEach(el => el.remove());
                 feedback("sov-editor-feedback", data.message);

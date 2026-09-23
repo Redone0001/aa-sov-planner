@@ -4,6 +4,16 @@ from . import views
 
 app_name = "aasov"
 urlpatterns = [
+    path(
+        "<int:project_id>/constellations/<int:constellation_id>/ratting/",
+        views.best_ratting,
+        name="best_ratting",
+    ),
+    path(
+        "<int:project_id>/systems/<int:system_id>/remove/",
+        views.system_remove,
+        name="system_remove",
+    ),
     path("", views.index, name="index"),
     path("<int:project_id>/", views.project, name="project"),
     path("<int:project_id>/systems/<int:system_id>/mode/", views.system_mode, name="mode"),

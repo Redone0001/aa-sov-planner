@@ -5,7 +5,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .forms import ModeForm, RouteForm, UpgradeForm
 from .models import PlannedSystem, PlannedUpgrade, Project, WorkforceRoute
@@ -13,6 +13,7 @@ from .services import (
     calculate_project,
     edit_system,
     remove_item,
+    remove_system,
     route_proposal,
     save_route,
     save_upgrade,
@@ -35,6 +36,7 @@ def project(request, project_id):
             "project": plan,
             "projects": Project.objects.all(),
             "can_edit": request.user.has_perm("aasov.edit_plan"),
+            "can_manage": request.user.has_perm("aasov.manage_plan"),
         }
     )
     return render(request, "aasov/project.html", context)
@@ -47,7 +49,11 @@ def is_async(request):
 def saved(request, plan, message):
     if is_async(request):
         context = calculate_project(plan)
-        context.update(project=plan, can_edit=request.user.has_perm("aasov.edit_plan"))
+        context.update(
+            project=plan,
+            can_edit=request.user.has_perm("aasov.edit_plan"),
+            can_manage=request.user.has_perm("aasov.manage_plan"),
+        )
         return JsonResponse(
             {
                 "saved": True,
@@ -103,7 +109,10 @@ def upgrade(request, project_id, system_id, upgrade_id=None):
         if upgrade_id
         else PlannedUpgrade(system=system)
     )
-    form = UpgradeForm(request.POST or None, instance=item)
+    initial = (
+        {"status": request.session.get("aasov_upgrade_status", "planned")} if not upgrade_id else {}
+    )
+    form = UpgradeForm(request.POST or None, instance=item, initial=initial)
     if request.method == "POST" and form.is_valid():
         try:
             save_upgrade(
@@ -118,6 +127,7 @@ def upgrade(request, project_id, system_id, upgrade_id=None):
         except ObjectDoesNotExist as error:
             raise Http404 from error
         else:
+            request.session["aasov_upgrade_status"] = form.cleaned_data["status"]
             return saved(request, plan, "Upgrade saved. Budgets updated.")
     return form_page(request, plan, form, f"Upgrade · {system}", repeat=upgrade_id is None)
 
@@ -194,4 +204,85 @@ def route_preview(request, project_id):
             "message": "Valid stargate path. Connectivity is checked again when saving.",
             "path": [{"name": str(node), "mode": node.get_mode_display()} for node in path],
         }
+    )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.manage_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def system_remove(request, project_id, system_id):
+    from django import forms
+
+    plan = get_object_or_404(Project, pk=project_id)
+    system = get_object_or_404(PlannedSystem, project=plan, pk=system_id)
+    if request.method == "POST":
+        try:
+            remove_system(plan.pk, system.pk)
+        except ObjectDoesNotExist as error:
+            raise Http404 from error
+        return saved(request, plan, f"{system} removed from the plan.")
+    return form_page(
+        request,
+        plan,
+        forms.Form(),
+        f"Remove {system}?",
+        explanation="This removes the system, its upgrades and its import/export routes. Routes passing through it may become invalid. It stays excluded when the project's regions are saved again.",
+        submit_label="Remove system",
+        hide_budget_note=True,
+    )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def best_ratting(request, project_id, constellation_id):
+    from django import forms
+    from django.core import signing
+
+    from .optimizer import apply_proposal, preview_rows, propose
+
+    class ProposalForm(forms.Form):
+        proposal = forms.CharField(widget=forms.HiddenInput)
+
+    plan = get_object_or_404(Project, pk=project_id)
+    if not plan.systems.filter(solar_system__constellation_id=constellation_id).exists():
+        raise Http404
+    salt = f"aasov.ratting.{request.user.pk}"
+    preview = {}
+    form = ProposalForm(request.POST if request.method == "POST" else None)
+    try:
+        if request.method == "POST":
+            if form.is_valid():
+                proposal = signing.loads(form.cleaned_data["proposal"], salt=salt, max_age=900)
+                if proposal["constellation"] != constellation_id:
+                    raise ValidationError("This preview belongs to another constellation.")
+                apply_proposal(plan.pk, proposal)
+                return saved(
+                    request,
+                    plan,
+                    "Ratting plan applied. Upgrades, modes and workforce routes updated.",
+                )
+        else:
+            proposal = propose(plan, constellation_id)
+            preview = preview_rows(plan, proposal)
+            form = ProposalForm(
+                initial={"proposal": signing.dumps(proposal, salt=salt, compress=True)}
+            )
+    except signing.BadSignature:
+        form.add_error(
+            None, "Preview expired or invalid. Close this dialog and run Best ratting again."
+        )
+    except ValidationError as error:
+        if not form.is_bound:
+            form = ProposalForm({})
+        validation_error(form, error)
+    return form_page(
+        request,
+        plan,
+        form,
+        "Best ratting · Preview",
+        submit_label="Apply ratting plan",
+        hide_budget_note=True,
+        disable_submit=not preview,
+        **preview,
     )
