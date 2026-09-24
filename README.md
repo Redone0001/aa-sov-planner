@@ -100,6 +100,8 @@ Restart AA web services and Celery workers, then run `python manage.py aasov_sna
 
 ## Map and Ansiblex range preview (0.4.0)
 
+Since **0.4.1**, system circles are three times larger, upgrade icons appear below them by default, and optional upgrade labels form a vertical list. Icons use the [EVE Image Server](https://developers.eveonline.com/docs/services/image-server/); hovering shows the upgrade name and status, and unavailable icons display a question mark. The **Ansiblex range** selector can restrict candidate highlights, connection lines, the candidate list and **Fit 5 LY range** to systems with **Advanced Logistics present (any status)** or **Advanced Logistics online only**. These filters use this plan's upgrades; outside-plan systems have unknown upgrade status and are excluded. Other planned systems remain on the map for context.
+
 Open **Map / Ansiblex** on a plan. The map uses the SDE's in-game schematic `x_2d` / `y_2d` positions, with stargates, directional workforce routes, ownership and upgrade labels, and red resource warnings. Select systems directly or through the menu. The side panel shows ownership snapshot time, budgets, upgrade status and workforce paths; editors can change upgrades, mark them installed, or edit routes in the same dialogs as the list. Edits refresh the map while preserving its viewport. Pan by dragging and zoom with the wheel or buttons; **Fit plan**, **Fit 5 LY range** and **Clear selection** reset the relevant view or highlight.
 
 Plan Managers can **Set capital**, choosing one system in the plan. This is saved for all viewers and is also available in project administration. Removing the capital system clears the selection. Geographic distance from that capital controls these zones:

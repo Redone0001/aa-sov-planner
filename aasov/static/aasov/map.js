@@ -12,6 +12,12 @@
     let origin = [0, 0], unit = 1, projected = false, view = [0, 0, 1000, 650];
     const layers = () => Object.fromEntries([...panel.querySelectorAll("[data-map-layer]")].map(el => [el.dataset.mapLayer, el.checked]));
     const nodeMap = () => new Map([...candidates, ...(data?.nodes || [])].map(n => [n.id, n]));
+    const rangeFilter = document.getElementById("sov-map-range-filter");
+    function rangeCandidates() {
+        const nodes = nodeMap();
+        return candidates.filter(n => rangeFilter.value === "all" ||
+            (rangeFilter.value === "online" ? nodes.get(n.id)?.logistics === "online" : Boolean(nodes.get(n.id)?.logistics)));
+    }
     const point = n => [(n.position[0] - origin[0]) / unit, -(n.position[1] - origin[1]) / unit];
     const distance = value => value == null ? "Unknown" : `${value.toFixed(3)} LY`;
     const number = value => value.toLocaleString();
@@ -38,7 +44,7 @@
     }
     function setView() { canvas.setAttribute("viewBox", view.join(" ")); }
     function fit(scope = "plan") {
-        const ids = new Set([selected, ...candidates.map(n => n.id)]);
+        const ids = new Set([selected, ...rangeCandidates().map(n => n.id)]);
         const nodes = [...nodeMap().values()].filter(n => n.position && (scope === "range" ? ids.has(n.id) : n.planned_id));
         if (!nodes.length) return;
         const positions = nodes.map(point), xs = positions.map(p => p[0]), ys = positions.map(p => p[1]);
@@ -62,8 +68,10 @@
         if (!data) return;
         const focused = document.activeElement?.dataset?.mapNode;
         canvas.replaceChildren();
-        const nodes = nodeMap(), visible = [...nodes.values()].filter(n => n.position), colors = palette(visible), enabled = layers();
-        const nearby = new Set(candidates.map(n => n.id));
+        const nodes = nodeMap(), matches = rangeCandidates();
+        const nearby = new Set(matches.map(n => n.id));
+        const visible = [...nodes.values()].filter(n => n.position && (n.planned_id || n.id === selected || nearby.has(n.id)));
+        const colors = palette(visible), enabled = layers();
         const legend = document.getElementById("sov-map-legend"); legend.replaceChildren();
         const ranges = ["0–5", ">5–10", ">10–15", ">15–20", ">20"];
         for (const [zone, color] of colors) {
@@ -77,11 +85,16 @@
         svg("path", {d:"M 0 0 L 10 5 L 0 10 z", fill:"var(--bs-info, #17a2b8)"}, marker);
         function line(a, b, className, parent = canvas) {
             if (!nodes.get(a)?.position || !nodes.get(b)?.position) return null;
-            const [x1,y1] = point(nodes.get(a)), [x2,y2] = point(nodes.get(b));
+            let [x1,y1] = point(nodes.get(a)), [x2,y2] = point(nodes.get(b));
+            if (className.includes("sov-map-route")) {
+                const dx=x2-x1, dy=y2-y1, length=Math.hypot(dx,dy);
+                const inset=length ? Math.min(23/length,.4) : 0;
+                x1+=dx*inset; y1+=dy*inset; x2-=dx*inset; y2-=dy*inset;
+            }
             return svg("line", {x1,y1,x2,y2,class:className,"vector-effect":"non-scaling-stroke"}, parent);
         }
         if (enabled.gates) for (const [a,b] of data.gates) line(a,b,"sov-map-gate");
-        for (const candidate of candidates) {
+        for (const candidate of matches) {
             const edge = line(selected,candidate.id,"sov-map-ansiblex");
             if (edge) svg("title",{},edge).textContent = `Possible connection: ${distance(candidate.source_distance)} (range only)`;
         }
@@ -98,16 +111,35 @@
             const [x,y] = point(n), active = n.id === selected, reachable = nearby.has(n.id);
             const group = svg("g", {transform:`translate(${x} ${y})`, role:"button", tabindex:0, "aria-label":`${n.name}${n.warnings?.length ? ", resource warnings" : ""}${reachable ? ", within 5 LY" : ""}`, "data-map-node":n.id});
             if (selected && !active && !reachable) group.setAttribute("opacity", ".42");
-            if (reachable) svg("circle", {r:12,class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
-            if (active) svg("circle", {r:15,fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
-            svg("circle", {r:7, fill:colors.get(n.zone)||"var(--bs-secondary, #777)", stroke:enabled.warnings && n.warnings?.length ? "var(--bs-danger)" : "var(--bs-body-color)", "stroke-width":enabled.warnings && n.warnings?.length ? 3 : 1, "stroke-dasharray":n.planned_id ? "none" : "2 2"}, group);
+            if (reachable) svg("circle", {r:26,class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
+            if (active) svg("circle", {r:30,fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
+            svg("circle", {r:21, fill:colors.get(n.zone)||"var(--bs-secondary, #777)", stroke:enabled.warnings && n.warnings?.length ? "var(--bs-danger)" : "var(--bs-body-color)", "stroke-width":enabled.warnings && n.warnings?.length ? 3 : 1, "stroke-dasharray":n.planned_id ? "none" : "2 2"}, group);
             const title = svg("title", {}, group);
             title.textContent = `${n.name}\n${n.constellation}\nOwner: ${n.owner||"Outside plan; not captured"}\nCapital: ${distance(n.capital_distance)}${n.zone ? ` (Zone ${n.zone})` : ""}\n${n.warnings?.join("\n")||""}`;
             let labelY = 4;
-            function label(text, extra = {}) { const el = svg("text", {x:19,y:labelY,"font-size":12,...extra},group); el.textContent = text; labelY+=16; }
+            function label(text, extra = {}) { const el = svg("text", {x:35,y:labelY,"font-size":12,...extra},group); el.textContent = text; labelY+=16; }
             label(`${n.id===data.capital ? "★ " : ""}${n.name}${enabled.warnings && n.warnings?.length ? " ⚠" : ""}`);
             if (enabled.owners) label(n.owner||"Owner not captured", {"font-size":10});
-            if (enabled.upgrades && n.upgrades?.length) label(n.upgrades.map(u => `${u.name} (${u.status})`).join(" · "), {"font-size":10});
+            if (enabled.icons && n.upgrades?.length) {
+                const columns = Math.min(4, n.upgrades.length);
+                n.upgrades.forEach((u, i) => {
+                    const x = (i % columns) * 22 - columns * 11;
+                    const y = 35 + Math.floor(i / columns) * 24;
+                    const icon = svg("g", {class:"sov-map-upgrade-icon"}, group);
+                    svg("rect", {x,y,width:20,height:20,rx:2,fill:"var(--bs-body-bg)",stroke:u.status === "online" ? "var(--bs-success)" : u.status === "planned" ? "var(--bs-primary)" : "var(--bs-secondary)"},icon);
+                    // The type ID comes from the SDE; text remains available if images are blocked.
+                    const image = svg("image", {x,y,width:20,height:20,href:`https://images.evetech.net/types/${u.type_id}/icon?size=64`,opacity:u.status === "offline" ? .45 : 1},icon);
+                    image.addEventListener("error", () => {
+                        image.remove();
+                        svg("text", {x:x+10,y:y+15,"text-anchor":"middle","font-size":14},icon).textContent="?";
+                    }, {once:true});
+                    svg("title",{},icon).textContent = `${u.name} (${u.status})`;
+                });
+            }
+            if (enabled.upgrades && n.upgrades?.length) {
+                labelY = Math.max(labelY, 47);
+                for (const u of n.upgrades) label(`${u.name} (${u.status})`, {"font-size":10,class:"sov-map-upgrade-label",x:enabled.icons ? Math.min(4,n.upgrades.length)*11+8 : 35});
+            }
         }
         const missing = [...nodes.values()].filter(n => !n.position).length;
         message.textContent = `${visible.length} systems mapped${missing ? `; ${missing} missing SDE 2D coordinates (still selectable in the menu)` : ""}. ${rangeLoading ? "Checking 5 LY range…" : rangeError}`;
@@ -155,9 +187,10 @@
         if (n.planned_id) sidebar.append(element("div", `Advanced Logistics Network here: ${n.logistics || "not in plan"}`, "small"));
         if (rangeLoading || rangeError) sidebar.append(element("p", rangeLoading ? "Checking range…" : rangeError));
         else {
-            sidebar.append(element("p", `${candidates.length} systems within 5 LY.`, "mb-1"));
+            const matches = rangeCandidates();
+            sidebar.append(element("p", `${matches.length} systems within 5 LY.${rangeFilter.value !== "all" ? " Filtered by Advanced Logistics in this plan; outside-plan upgrades are unknown." : ""}`, "mb-1"));
             const list = element("div", null, "sov-map-nearby");
-            for (const candidate of candidates) {
+            for (const candidate of matches) {
                 const known = nodeMap().get(candidate.id), row = element("div", null, "border-top py-1");
                 const button = element("button", candidate.name, "btn btn-link btn-sm p-0"); button.type="button"; button.dataset.mapSelect=candidate.id;
                 row.append(button, element("span", ` · ${distance(candidate.source_distance)}${candidate.zone ? ` · Z${candidate.zone}` : ""}${known.planned_id ? ` · Logistics: ${known.logistics||"not in plan"}` : " · outside plan"}`));
@@ -217,6 +250,7 @@
         chooser.value=""; draw(); showSelection();
     }
     chooser.addEventListener("change", () => { if (chooser.value) select(Number(chooser.value)); });
+    rangeFilter.addEventListener("change", () => { draw(); showSelection(); });
     panel.addEventListener("change", event => { if (event.target.matches("[data-map-layer]")) draw(); });
     panel.addEventListener("click", event => {
         const node=event.target.closest("[data-map-node], [data-map-select]");

@@ -13,9 +13,15 @@
     <label><input type="checkbox" data-map-layer="gates" checked> Stargates</label>
     <label><input type="checkbox" data-map-layer="routes" checked> Workforce routes</label>
     <label><input type="checkbox" data-map-layer="owners"> Ownership labels</label>
+    <label><input type="checkbox" data-map-layer="icons" checked> Upgrade icons</label>
     <label><input type="checkbox" data-map-layer="upgrades"> Upgrade labels</label>
     <label><input type="checkbox" data-map-layer="warnings" checked> Resource warnings</label>
   </div>
+  <label class="small mb-2">Ansiblex range <select id="sov-map-range-filter" class="form-select form-select-sm d-inline-block w-auto">
+    <option value="all">All systems in range</option>
+    <option value="present">Advanced Logistics present (any status)</option>
+    <option value="online">Advanced Logistics online only</option>
+  </select></label>
   <div id="sov-map-legend" class="d-flex flex-wrap gap-3 small mb-2" aria-label="Capital distance zones"></div>
   <details class="sov-details small text-body-secondary mb-2"><summary>Click a system to inspect it and show its 5 LY connections · Map help</summary><p class="mb-1">Gold rings mark candidates; dashed outlines mark systems outside this plan. Drag to pan; scroll to zoom. Range is measured in 3D; the diagram uses EVE's 2D layout. A candidate is a range check, not a confirmed or installed Ansiblex link.</p></details>
   <div id="sov-map-message" class="small mb-2" role="status"></div>

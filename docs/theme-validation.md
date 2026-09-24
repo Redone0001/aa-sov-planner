@@ -61,3 +61,7 @@ Browser checks passed in Flatly, Darkly and Materia for file upload, rejected ro
 Flatly, Darkly and Materia checks cover three adaptive blue distance zones, workforce paths, 5 LY range highlighting, candidates outside the plan, inline upgrade installation/editing, saved capital selection, pan/zoom and clearing selection. The map remains open during edits with no document navigations or JavaScript errors. The mobile view has no horizontal page overflow. Tests use synthetic coordinates and names, not player planning data.
 
 [Browser results](map-checks.json) · [Flatly](map-flatly.png) · [Darkly](map-darkly.png) · [Materia](map-materia.png)
+
+### Map presentation (0.4.1)
+
+Browser checks in Flatly, Darkly and Materia confirm a system radius of 21 (previously 7), default upgrade icons positioned below systems, a separate vertical label for each upgrade, and unavailable-image tooltips/fallbacks. Synthetic planned/online/offline logistics states verify the presence and online-only range filters across highlight rings, candidate lines and lists; outside-plan systems with unknown upgrades are excluded. Restoring the unfiltered mode restores all range candidates. No JavaScript errors occurred. Image requests were deliberately blocked in the fallback checks; the production URLs use SDE type IDs and EVE's documented Image Server.

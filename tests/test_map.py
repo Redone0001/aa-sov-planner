@@ -84,6 +84,7 @@ def test_map_overlays_and_editor_permissions(client, reader, world):
     assert nodes[a.solar_system_id]["power"]["left"] == -1000
     assert nodes[a.solar_system_id]["warnings"]
     assert nodes[a.solar_system_id]["logistics"] == "planned"
+    assert nodes[a.solar_system_id]["upgrades"][0]["type_id"] == upgrade.item_type_id
     assert all(url is None for url in nodes[a.solar_system_id]["actions"].values())
     assert nodes[a.solar_system_id]["upgrades"][0]["edit"] is None
     assert payload["routes"][0]["path"] == [a.solar_system_id, t.solar_system_id, b.solar_system_id]

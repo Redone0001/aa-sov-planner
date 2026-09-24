@@ -73,6 +73,7 @@ def project_map(project, context, can_edit, can_manage):
             },
             upgrades=[
                 {
+                    "type_id": u.upgrade.item_type_id,
                     "name": u.upgrade.item_type.name,
                     "status": u.status,
                     "edit": url("upgrade_edit", u.pk) if can_edit else None,
