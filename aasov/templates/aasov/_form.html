@@ -5,6 +5,7 @@
 {% if explanation %}<p>{{ explanation }}</p>{% endif %}
   {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
   {% if optimisation_rows %}{% include "aasov/_optimisation.html" %}{% endif %}
+  {% if balance %}{% include "aasov/_workforce_preview.html" %}{% endif %}
   {% for field in form %}{% if field.is_hidden %}{{ field }}{% else %}<div class="mb-3">
     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
     {{ field }}{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}

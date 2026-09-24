@@ -4,6 +4,7 @@ from . import views
 
 app_name = "aasov"
 urlpatterns = [
+    path("<int:project_id>/workforce/balance/", views.balance_workforce, name="balance_workforce"),
     path("<int:project_id>/map/", views.map_data, name="map_data"),
     path("<int:project_id>/map/range/<int:solar_id>/", views.map_range, name="map_range"),
     path("<int:project_id>/capital/", views.capital, name="capital"),

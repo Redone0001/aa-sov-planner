@@ -48,6 +48,53 @@ def is_async(request):
 
 
 @login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def balance_workforce(request, project_id):
+    from django import forms
+    from django.core import signing
+
+    from .workforce import apply_proposal, propose
+
+    class BalanceForm(forms.Form):
+        proposal = forms.CharField(widget=forms.HiddenInput)
+
+    plan = get_object_or_404(Project, pk=project_id)
+    salt = f"aasov.workforce.{request.user.pk}"
+    form = BalanceForm(request.POST if request.method == "POST" else None)
+    preview = None
+    try:
+        if request.method == "POST":
+            if form.is_valid():
+                proposal = signing.loads(form.cleaned_data["proposal"], salt=salt, max_age=900)
+                apply_proposal(plan.pk, proposal)
+                return saved(
+                    request, plan, "Workforce balancing applied. Routes and budgets updated."
+                )
+        else:
+            proposal, preview = propose(plan)
+            form = BalanceForm(
+                initial={"proposal": signing.dumps(proposal, salt=salt, compress=True)}
+            )
+    except signing.BadSignature:
+        form.add_error(None, "Preview expired or invalid. Run Balance workforce again.")
+    except ValidationError as error:
+        if not form.is_bound:
+            form = BalanceForm({})
+        validation_error(form, error)
+    return form_page(
+        request,
+        plan,
+        form,
+        "Balance workforce · Preview",
+        balance=preview,
+        hide_budget_note=True,
+        submit_label="Apply workforce balancing",
+        disable_submit=not preview or not preview["routes"],
+    )
+
+
+@login_required
 @permission_required("aasov.view_project", raise_exception=True)
 @require_GET
 def map_data(request, project_id):

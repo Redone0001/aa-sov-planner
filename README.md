@@ -98,6 +98,12 @@ python manage.py collectstatic --noinput
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
 
+## Workforce balancing (0.5.0)
+
+Editors can click **Balance workforce** at the top of a plan in List or Map view. The preview proposes new transfers or increases to existing transfers between direct stargate neighbours. It maximises the workforce deficit covered, then prefers fewer changed routes. It respects each donor's remaining natural workforce and local needs, one export destination per source, and three sources per importer. Upgrade-generated workforce cannot be exported. Existing upgrades and routes are preserved; systems used as intermediate stops on existing routes cannot change mode.
+
+Review the proposed transfers and before/after workforce balances, including any deficits that cannot be covered, then click **Apply workforce balancing**. Only affected endpoint modes and route amounts change. Budgets, map and inventory refresh without navigation. The signed, user-specific preview expires after 15 minutes and is rejected if planning inputs or SDE data changed. Invalid existing routes or incomplete natural-resource data must be repaired first. Power deficits are not addressed. The solver has a 10-second limit and explicitly labels feasible proposals when optimality is unproven. No database migration is required for 0.5.0.
+
 ## Map and Ansiblex range preview (0.4.0)
 
 Since **0.4.3**, default **Comfortable** spacing spreads system centers 60% farther apart relative to their boxes, leaving more room for route arrows. Choose **Compact** for the previous spacing or **Spacious** for additional separation. Changing spacing fits the plan; zoom in for larger text. This preserves the schematic arrangement and does not affect LY calculations.

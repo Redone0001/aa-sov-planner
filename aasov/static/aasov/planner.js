@@ -152,8 +152,9 @@
         busy = true; opener = {href: link.href, row: link.closest("tr")?.id};
         document.getElementById("sov-editor-feedback").hidden = true;
         const optimising = link.textContent.trim() === "Best ratting";
-        document.getElementById("sov-editor-title").textContent = optimising ? "Optimising constellation…" : "Loading editor…";
-        content.textContent = optimising ? "Checking upgrades, resource budgets and workforce paths. This may take a few seconds…" : "Loading…"; modal.show();
+        const balancing = link.textContent.trim() === "Balance workforce";
+        document.getElementById("sov-editor-title").textContent = balancing ? "Balancing workforce…" : optimising ? "Optimising constellation…" : "Loading editor…";
+        content.textContent = balancing ? "Checking adjacent systems, available workforce and route limits…" : optimising ? "Checking upgrades, resource budgets and workforce paths. This may take a few seconds…" : "Loading…"; modal.show();
         try {
             const data = await jsonRequest(link.href);
             document.getElementById("sov-editor-title").textContent = data.title;

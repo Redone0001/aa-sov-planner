@@ -69,3 +69,7 @@ Browser checks in Flatly, Darkly and Materia confirm a system radius of 21 (prev
 ### Rectangular systems (0.4.2)
 
 Flatly, Darkly and Materia checks verify rounded rectangular system nodes, centered names fitting inside their measured bounds (including a long synthetic system name), default icons below the nodes, vertical upgrade labels and functioning range filters. Selection and range outlines follow the new shape, and workforce arrows stop at rectangle boundaries. No JavaScript errors occurred.
+
+## Workforce balancing (0.5.0)
+
+Browser checks passed in Flatly, Darkly and Materia on AA 5.3.1. Each synthetic plan covered a 2,000 workforce deficit using two adjacent donors, previewed the transfers, and applied them with zero document navigations or JavaScript errors. Checks verified two saved routes and zero remaining workforce deficit. The Darkly check started in Map view and confirmed that it stayed open with both refreshed workforce arrows. The Darkly preview was also visually inspected. All fixture data was synthetic.
