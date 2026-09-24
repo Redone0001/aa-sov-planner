@@ -7,6 +7,10 @@
     const chooser = document.getElementById("sov-map-system");
     const message = document.getElementById("sov-map-message");
     const svgNS = "http://www.w3.org/2000/svg";
+    const nameMeasure = document.createElement("canvas").getContext("2d");
+    if (nameMeasure) nameMeasure.font = "600 12px Arial";
+    const nodeTitle = n => `${n.id === data?.capital ? "★ " : ""}${n.name}${layers().warnings && n.warnings?.length ? " ⚠" : ""}`;
+    const nodeWidth = n => Math.max(90, Math.ceil(nameMeasure?.measureText(nodeTitle(n)).width || nodeTitle(n).length * 8) + 24);
     let data = null, selected = null, candidates = [], rangeError = "", rangeLoading = false;
     let rangeSequence = 0, loadSequence = 0, dirty = true, drag = null, moved = false;
     let origin = [0, 0], unit = 1, projected = false, view = [0, 0, 1000, 650];
@@ -49,7 +53,8 @@
         if (!nodes.length) return;
         const positions = nodes.map(point), xs = positions.map(p => p[0]), ys = positions.map(p => p[1]);
         const x = Math.min(...xs), y = Math.min(...ys), w = Math.max(80, Math.max(...xs) - x), h = Math.max(80, Math.max(...ys) - y);
-        view = [x-60, y-50, w+170, h+100]; setView();
+        const padding = Math.max(60, ...nodes.map(n => nodeWidth(n)/2 + 15));
+        view = [x-padding, y-50, w+2*padding, h+100]; setView();
     }
     function zoom(factor) {
         const w = Math.max(15, Math.min(10000, view[2]*factor));
@@ -87,9 +92,10 @@
             if (!nodes.get(a)?.position || !nodes.get(b)?.position) return null;
             let [x1,y1] = point(nodes.get(a)), [x2,y2] = point(nodes.get(b));
             if (className.includes("sov-map-route")) {
-                const dx=x2-x1, dy=y2-y1, length=Math.hypot(dx,dy);
-                const inset=length ? Math.min(23/length,.4) : 0;
-                x1+=dx*inset; y1+=dy*inset; x2-=dx*inset; y2-=dy*inset;
+                const dx=x2-x1, dy=y2-y1;
+                const inset = n => Math.min(.4, dx ? (nodeWidth(n)/2+3)/Math.abs(dx) : Infinity, dy ? 20/Math.abs(dy) : Infinity);
+                const start=inset(nodes.get(a)), end=inset(nodes.get(b));
+                x1+=dx*start; y1+=dy*start; x2-=dx*end; y2-=dy*end;
             }
             return svg("line", {x1,y1,x2,y2,class:className,"vector-effect":"non-scaling-stroke"}, parent);
         }
@@ -111,15 +117,20 @@
             const [x,y] = point(n), active = n.id === selected, reachable = nearby.has(n.id);
             const group = svg("g", {transform:`translate(${x} ${y})`, role:"button", tabindex:0, "aria-label":`${n.name}${n.warnings?.length ? ", resource warnings" : ""}${reachable ? ", within 5 LY" : ""}`, "data-map-node":n.id});
             if (selected && !active && !reachable) group.setAttribute("opacity", ".42");
-            if (reachable) svg("circle", {r:26,class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
-            if (active) svg("circle", {r:30,fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
-            svg("circle", {r:21, fill:colors.get(n.zone)||"var(--bs-secondary, #777)", stroke:enabled.warnings && n.warnings?.length ? "var(--bs-danger)" : "var(--bs-body-color)", "stroke-width":enabled.warnings && n.warnings?.length ? 3 : 1, "stroke-dasharray":n.planned_id ? "none" : "2 2"}, group);
+            const width = nodeWidth(n);
+            const box = pad => ({x:-width/2-pad, y:-17-pad, width:width+2*pad, height:34+2*pad, rx:6+pad});
+            if (reachable) svg("rect", {...box(5),class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
+            if (active) svg("rect", {...box(9),fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
+            const fill = colors.get(n.zone)||"rgb(100, 110, 120)";
+            svg("rect", {...box(0), class:"sov-map-system-shape", fill, stroke:enabled.warnings && n.warnings?.length ? "var(--bs-danger)" : "var(--bs-body-color)", "stroke-width":enabled.warnings && n.warnings?.length ? 3 : 1, "stroke-dasharray":n.planned_id ? "none" : "2 2"}, group);
+            const rgb = fill.match(/\d+/g).map(Number);
+            const foreground = rgb[0]*.299 + rgb[1]*.587 + rgb[2]*.114 > 150 ? "#172335" : "#ffffff";
+            svg("text", {x:0,y:1,"text-anchor":"middle","dominant-baseline":"middle","font-size":12,"font-family":"Arial","font-weight":600,class:"sov-map-system-name",style:`fill:${foreground};stroke:none;`},group).textContent=nodeTitle(n);
             const title = svg("title", {}, group);
             title.textContent = `${n.name}\n${n.constellation}\nOwner: ${n.owner||"Outside plan; not captured"}\nCapital: ${distance(n.capital_distance)}${n.zone ? ` (Zone ${n.zone})` : ""}\n${n.warnings?.join("\n")||""}`;
             let labelY = 4;
             function label(text, extra = {}) { const el = svg("text", {x:35,y:labelY,"font-size":12,...extra},group); el.textContent = text; labelY+=16; }
-            label(`${n.id===data.capital ? "★ " : ""}${n.name}${enabled.warnings && n.warnings?.length ? " ⚠" : ""}`);
-            if (enabled.owners) label(n.owner||"Owner not captured", {"font-size":10});
+            if (enabled.owners) label(n.owner||"Owner not captured", {x:0,y:-33,"text-anchor":"middle","font-size":10});
             if (enabled.icons && n.upgrades?.length) {
                 const columns = Math.min(4, n.upgrades.length);
                 n.upgrades.forEach((u, i) => {

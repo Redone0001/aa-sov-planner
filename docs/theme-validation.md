@@ -65,3 +65,7 @@ Flatly, Darkly and Materia checks cover three adaptive blue distance zones, work
 ### Map presentation (0.4.1)
 
 Browser checks in Flatly, Darkly and Materia confirm a system radius of 21 (previously 7), default upgrade icons positioned below systems, a separate vertical label for each upgrade, and unavailable-image tooltips/fallbacks. Synthetic planned/online/offline logistics states verify the presence and online-only range filters across highlight rings, candidate lines and lists; outside-plan systems with unknown upgrades are excluded. Restoring the unfiltered mode restores all range candidates. No JavaScript errors occurred. Image requests were deliberately blocked in the fallback checks; the production URLs use SDE type IDs and EVE's documented Image Server.
+
+### Rectangular systems (0.4.2)
+
+Flatly, Darkly and Materia checks verify rounded rectangular system nodes, centered names fitting inside their measured bounds (including a long synthetic system name), default icons below the nodes, vertical upgrade labels and functioning range filters. Selection and range outlines follow the new shape, and workforce arrows stop at rectangle boundaries. No JavaScript errors occurred.
