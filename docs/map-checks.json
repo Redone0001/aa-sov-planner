@@ -1,0 +1,38 @@
+{
+  "report": [
+    {
+      "theme": "flatly",
+      "zones": 3,
+      "externalCandidate": true,
+      "range": true,
+      "inlineInstall": true,
+      "inlineEdit": true,
+      "capital": true,
+      "navigations": 0
+    },
+    {
+      "theme": "darkly",
+      "zones": 3,
+      "externalCandidate": true,
+      "range": true,
+      "inlineInstall": true,
+      "inlineEdit": true,
+      "capital": true,
+      "navigations": 0
+    },
+    {
+      "theme": "materia",
+      "zones": 3,
+      "externalCandidate": true,
+      "range": true,
+      "inlineInstall": true,
+      "inlineEdit": true,
+      "capital": true,
+      "navigations": 0
+    }
+  ],
+  "mobile": true,
+  "panAndZoom": true,
+  "clearSelection": true,
+  "errors": []
+}

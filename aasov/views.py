@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -44,6 +45,50 @@ def project(request, project_id):
 
 def is_async(request):
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+@login_required
+@permission_required("aasov.view_project", raise_exception=True)
+@require_GET
+def map_data(request, project_id):
+    from .map_data import project_map
+
+    plan = get_object_or_404(Project.objects.select_related("capital__solar_system"), pk=project_id)
+    return JsonResponse(
+        project_map(
+            plan,
+            calculate_project(plan),
+            request.user.has_perm("aasov.edit_plan"),
+            request.user.has_perm("aasov.manage_plan"),
+        )
+    )
+
+
+@login_required
+@permission_required("aasov.view_project", raise_exception=True)
+@require_GET
+def map_range(request, project_id, solar_id):
+    from .map_data import nearby_systems
+    from .sde import eligible_systems
+
+    plan = get_object_or_404(Project.objects.select_related("capital__solar_system"), pk=project_id)
+    source = get_object_or_404(eligible_systems(), pk=solar_id)
+    return JsonResponse(nearby_systems(plan, source))
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.manage_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def capital(request, project_id):
+    from .forms import CapitalForm
+
+    with transaction.atomic():
+        plan = get_object_or_404(Project.objects.select_for_update(), pk=project_id)
+        form = CapitalForm(request.POST or None, instance=plan)
+        if request.method == "POST" and form.is_valid():
+            form.save()
+            return saved(request, plan, "Plan capital updated. Distance zones recalculated.")
+    return form_page(request, plan, form, "Plan capital", hide_budget_note=True)
 
 
 def saved(request, plan, message):

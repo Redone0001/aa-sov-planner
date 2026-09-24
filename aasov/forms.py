@@ -1,7 +1,21 @@
 from django import forms
 from eve_sde.models import SovereigntyUpgrade
 
-from .models import PlannedSystem, PlannedUpgrade
+from .models import PlannedSystem, PlannedUpgrade, Project
+
+
+class CapitalForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ("capital",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["capital"].queryset = self.instance.systems.select_related("solar_system")
+        self.fields["capital"].widget.attrs["class"] = "form-select"
+        self.fields[
+            "capital"
+        ].help_text = "Saved for everyone viewing this plan. Clear to hide distance zones."
 
 
 class StyledForm(forms.ModelForm):

@@ -18,6 +18,11 @@ class ProjectAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["selected_systems"].queryset = eligible_systems()
+        self.fields["capital"].queryset = (
+            PlannedSystem.objects.filter(project_id=self.instance.pk).select_related("solar_system")
+            if self.instance.pk
+            else PlannedSystem.objects.none()
+        )
 
     def clean(self):
         data = super().clean()
@@ -36,7 +41,7 @@ class ProjectAdmin(admin.ModelAdmin):
     readonly_fields = ("updated_at", "ownership_snapshots")
     fieldsets = (
         ("Ownership snapshots", {"fields": ("ownership_snapshots",)}),
-        (None, {"fields": ("name", "description", "updated_at")}),
+        (None, {"fields": ("name", "description", "capital", "updated_at")}),
         (
             "Add systems to this project",
             {

@@ -11,6 +11,16 @@
     let opener = null;
     const headers = {"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"};
 
+    function moveInventory() {
+        const slot = document.getElementById("sov-inventory-slot");
+        const inventory = board?.querySelector("[data-sov-inventory]");
+        if (!slot || !inventory) return;
+        const open = slot.querySelector("details")?.open;
+        slot.replaceChildren(inventory);
+        if (open) inventory.querySelector("details").open = true;
+    }
+    moveInventory();
+
     function filterRows() {
         const query = (document.getElementById("system-filter")?.value || "").trim().toLocaleLowerCase();
         const rows = [...document.querySelectorAll(".sov-system-row")];
@@ -54,11 +64,13 @@
         const tableLeft = board.querySelector(".table-responsive")?.scrollLeft || 0;
         const openDetails = new Set([...board.querySelectorAll("details[open][data-details-key]")].map(el => el.dataset.detailsKey));
         board.innerHTML = html;
+        moveInventory();
         for (const el of board.querySelectorAll("details[data-details-key]")) el.open = openDetails.has(el.dataset.detailsKey);
         filterRows();
         for (const [el, top, left] of positions) if (el.isConnected) { el.scrollTop = top; el.scrollLeft = left; }
         const table = board.querySelector(".table-responsive");
         if (table) table.scrollLeft = tableLeft;
+        document.dispatchEvent(new Event("sov:updated"));
     }
     async function preview(form) {
         if (!form.dataset.routePreview) return;

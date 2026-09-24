@@ -5,6 +5,9 @@ from django.db import models
 class Project(models.Model):
     name = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True)
+    capital = models.ForeignKey(
+        "PlannedSystem", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     regions = models.ManyToManyField("eve_sde.Region", blank=True)
     selected_systems = models.ManyToManyField("eve_sde.SolarSystem", blank=True)
     excluded_systems = models.ManyToManyField(
@@ -21,6 +24,11 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
+        if self.capital_id and self.capital.project_id != self.pk:
+            raise ValidationError({"capital": "Choose a capital from this plan."})
 
 
 class PlannedSystem(models.Model):

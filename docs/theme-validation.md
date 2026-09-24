@@ -55,3 +55,9 @@ Browser checks passed in Flatly, Darkly and Materia for file upload, rejected ro
 | Flatly | [Preview](csv-flatly.png) | [Planner](installed-flatly.png) |
 | Darkly | [Preview](csv-darkly.png) | [Planner](installed-darkly.png) |
 | Materia | [Preview](csv-materia.png) | [Planner](installed-materia.png) |
+
+## Interactive map (0.4.0)
+
+Flatly, Darkly and Materia checks cover three adaptive blue distance zones, workforce paths, 5 LY range highlighting, candidates outside the plan, inline upgrade installation/editing, saved capital selection, pan/zoom and clearing selection. The map remains open during edits with no document navigations or JavaScript errors. The mobile view has no horizontal page overflow. Tests use synthetic coordinates and names, not player planning data.
+
+[Browser results](map-checks.json) · [Flatly](map-flatly.png) · [Darkly](map-darkly.png) · [Materia](map-materia.png)

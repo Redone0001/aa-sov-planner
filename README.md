@@ -69,7 +69,7 @@ CELERYBEAT_SCHEDULE["EVE SDE :: Check for SDE Updates"] = {
 }
 ```
 
-Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project` and `aasov.edit_plan`. For **Plan Managers**, create an AA group with `aasov.view_project`, `aasov.edit_plan` and `aasov.manage_plan` (displayed as “Plan Manager: can remove systems from plans”). The management permission adds system removal; staff/superuser status is not needed. Staff creating projects also need normal Project add/change permissions; these do not automatically grant planner edit access. AA's usual login/main-character requirements apply. Permissions are global to the module: authorized readers can see every project.
+Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project` and `aasov.edit_plan`. For **Plan Managers**, create an AA group with `aasov.view_project`, `aasov.edit_plan` and `aasov.manage_plan` (displayed as “Plan Manager: can remove systems from plans”). The management permission adds system removal, CSV imports and capital selection; staff/superuser status is not needed. Staff creating projects also need normal Project add/change permissions; these do not automatically grant planner edit access. AA's usual login/main-character requirements apply. Permissions are global to the module: authorized readers can see every project.
 
 ## Use
 
@@ -98,6 +98,35 @@ python manage.py collectstatic --noinput
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
 
+## Map and Ansiblex range preview (0.4.0)
+
+Open **Map / Ansiblex** on a plan. The map uses the SDE's in-game schematic `x_2d` / `y_2d` positions, with stargates, directional workforce routes, ownership and upgrade labels, and red resource warnings. Select systems directly or through the menu. The side panel shows ownership snapshot time, budgets, upgrade status and workforce paths; editors can change upgrades, mark them installed, or edit routes in the same dialogs as the list. Edits refresh the map while preserving its viewport. Pan by dragging and zoom with the wheel or buttons; **Fit plan**, **Fit 5 LY range** and **Clear selection** reset the relevant view or highlight.
+
+Plan Managers can **Set capital**, choosing one system in the plan. This is saved for all viewers and is also available in project administration. Removing the capital system clears the selection. Geographic distance from that capital controls these zones:
+
+| Zone | Distance from capital |
+| --- | --- |
+| 1 | 0–5 LY |
+| 2 | Over 5 through 10 LY |
+| 3 | Over 10 through 15 LY |
+| 4 | Over 15 through 20 LY |
+| 5 | Over 20 LY |
+
+The legend includes only zones present among mapped systems, with blues spaced from dark to light across those zones. Zone boundaries use unrounded distances, with no gaps between bands. Distances use the three geographic coordinates and EVE's `9.46 × 10^15` metres per LY, independently of the schematic drawing. See [EVE map data documentation](https://developers.eveonline.com/docs/guides/map-data/).
+
+Selecting a system highlights all player-claimable nullsec systems within **5 LY**, including systems outside the project, using gold rings and dashed possible-connection lines. The candidate list shows exact-to-three-decimals distance, capital zone and the planned status of Advanced Logistics Network where known. This is a range preview, not a live Ansiblex network or a guarantee that a link can be built. It does not create links or change workforce routes. Systems outside the plan have no ownership snapshot or editable plan data. Missing schematic coordinates are reported and systems remain selectable in the menu; missing geographic coordinates produce an unknown distance, never a fabricated zero.
+
+Upgrade from an earlier version inside your AA virtual environment:
+
+```bash
+python -m pip install --upgrade "git+ssh://git@github.com/Redone0001/aa-sov-planner.git@master"
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py check
+```
+
+Restart AA web services and workers. Migration `0004_project_capital` adds the saved capital; no new ESI scopes or JavaScript dependencies are needed. Load/update the SDE if map coordinates are missing.
+
 ## Upgrade inventory (0.3.1)
 
 The expandable inventory line at the top of each plan totals upgrades by item across all systems. **Planned (copy)** copies only planned upgrades; **All (copy)** includes planned, online and offline upgrades. Each clipboard line contains `item<TAB>quantity`, without a header, ready to paste into a shopping list or spreadsheet. Inventory updates after edits without a page reload, and is available to read-only users too.
@@ -125,10 +154,12 @@ Review the preview and choose **Import as Planned**. Any row error blocks the en
 
 Limits: 2 MiB, 5,000 data rows / unique pairs and 256 columns. The preview displays up to 200 matched pairs and 50 errors, with totals. CSV content is not kept after parsing; a signed preview contains only matched IDs and their expected existing states.
 
-To update from 0.2.2:
+For current update instructions, including the capital migration required since 0.4.0, see **Map and Ansiblex range preview** above. The CSV importer itself was added in 0.3.0 without a schema change.
+
+Historical 0.3.0 update from 0.2.2:
 
 ```bash
-python -m pip install --upgrade "git+https://github.com/Redone0001/aa-sov-planner.git@master"
+python -m pip install --upgrade "git+https://github.com/Redone0001/aa-sov-planner.git@eaf1233"
 python manage.py collectstatic --noinput
 ```
 

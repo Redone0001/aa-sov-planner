@@ -1,0 +1,26 @@
+<section id="sov-map" class="border rounded p-2 mb-2" hidden data-url="{% url 'aasov:map_data' project.pk %}" data-range-url="{% url 'aasov:map_range' project.pk 0 %}">
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <strong id="sov-map-capital">Capital: not set</strong>
+    {% if can_manage %}<a data-sov-edit class="btn btn-sm btn-primary" href="{% url 'aasov:capital' project.pk %}">Set capital</a>{% endif %}
+    <label class="visually-hidden" for="sov-map-system">Select system</label><select id="sov-map-system" class="form-select form-select-sm sov-project-switch"><option value="">Select a system…</option></select>
+    <button type="button" class="btn btn-sm btn-secondary" data-map-fit="plan">Fit plan</button>
+    <button type="button" class="btn btn-sm btn-secondary" data-map-fit="range">Fit 5 LY range</button>
+    <button type="button" class="btn btn-sm btn-secondary" data-map-clear>Clear selection</button>
+    <button type="button" class="btn btn-sm btn-secondary" data-map-zoom="0.7" aria-label="Zoom in">+</button>
+    <button type="button" class="btn btn-sm btn-secondary" data-map-zoom="1.4" aria-label="Zoom out">−</button>
+  </div>
+  <div class="d-flex flex-wrap gap-3 small mb-2" id="sov-map-layers">
+    <label><input type="checkbox" data-map-layer="gates" checked> Stargates</label>
+    <label><input type="checkbox" data-map-layer="routes" checked> Workforce routes</label>
+    <label><input type="checkbox" data-map-layer="owners"> Ownership labels</label>
+    <label><input type="checkbox" data-map-layer="upgrades"> Upgrade labels</label>
+    <label><input type="checkbox" data-map-layer="warnings" checked> Resource warnings</label>
+  </div>
+  <div id="sov-map-legend" class="d-flex flex-wrap gap-3 small mb-2" aria-label="Capital distance zones"></div>
+  <details class="sov-details small text-body-secondary mb-2"><summary>Click a system to inspect it and show its 5 LY connections · Map help</summary><p class="mb-1">Gold rings mark candidates; dashed outlines mark systems outside this plan. Drag to pan; scroll to zoom. Range is measured in 3D; the diagram uses EVE's 2D layout. A candidate is a range check, not a confirmed or installed Ansiblex link.</p></details>
+  <div id="sov-map-message" class="small mb-2" role="status"></div>
+  <div class="sov-map-layout">
+    <svg id="sov-map-canvas" class="sov-map-canvas border rounded" viewBox="0 0 1000 650" role="group" aria-label="Sovereignty plan map"></svg>
+    <aside id="sov-map-selection" class="sov-map-selection border rounded p-2" aria-label="Selected system"><p>Select a system to inspect ownership, upgrades, workforce and connection candidates.</p></aside>
+  </div>
+</section>

@@ -15,6 +15,12 @@
   <label for="system-filter" class="visually-hidden">Filter systems</label><input id="system-filter" class="form-control form-control-sm sov-search" type="search" placeholder="Filter systems or upgrades…">
 </div>
 <div id="sov-feedback" class="alert" role="status" hidden></div>
+<div id="sov-inventory-slot"></div>
+<div class="btn-group mb-2" role="group" aria-label="Plan view">
+  <button type="button" class="btn btn-sm btn-primary" data-sov-view="list" aria-pressed="true">List</button>
+  <button type="button" class="btn btn-sm btn-outline-primary" data-sov-view="map" aria-pressed="false">Map / Ansiblex</button>
+</div>
+{% include 'aasov/_map.html' %}
 <div id="sov-board">{% include 'aasov/_board.html' %}</div>
 {% if can_edit or can_manage %}
 <div class="modal fade" id="sov-editor" tabindex="-1" aria-labelledby="sov-editor-title" aria-hidden="true">
@@ -25,4 +31,4 @@
 </div>
 {% endif %}
 {% endblock %}
-{% block extra_javascript %}{{ block.super }}<script src="{% static 'aasov/planner.js' %}" defer></script>{% endblock %}
+{% block extra_javascript %}{{ block.super }}<script src="{% static 'aasov/planner.js' %}" defer></script><script src="{% static 'aasov/map.js' %}" defer></script>{% endblock %}

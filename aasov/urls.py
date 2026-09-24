@@ -4,6 +4,9 @@ from . import views
 
 app_name = "aasov"
 urlpatterns = [
+    path("<int:project_id>/map/", views.map_data, name="map_data"),
+    path("<int:project_id>/map/range/<int:solar_id>/", views.map_range, name="map_range"),
+    path("<int:project_id>/capital/", views.capital, name="capital"),
     path("<int:project_id>/csv/", views.csv_upload, name="csv_upload"),
     path("<int:project_id>/csv/template/", views.csv_template, name="csv_template"),
     path(

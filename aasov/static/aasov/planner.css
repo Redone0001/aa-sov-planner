@@ -23,3 +23,24 @@
 #sov-feedback { padding: .3rem .6rem; margin-bottom: .5rem; font-size: .875rem; }
 
 .sov-table .sov-installed { padding: 0 .3rem; line-height: 1.4; }
+
+.sov-map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; gap: .6rem; }
+.sov-map-canvas { width: 100%; height: 65vh; min-height: 420px; background: var(--bs-body-bg); touch-action: none; cursor: grab; }
+.sov-map-canvas:active { cursor: grabbing; }
+.sov-map-selection { max-height: 65vh; overflow-y: auto; font-size: .875rem; }
+.sov-map-canvas text { fill: var(--bs-body-color); paint-order: stroke; stroke: var(--bs-body-bg); stroke-width: 3px; stroke-linejoin: round; }
+.sov-map-canvas [role=button] { cursor: pointer; }
+.sov-map-canvas [role=button]:focus { outline: none; }
+.sov-map-canvas [role=button]:focus circle { stroke: var(--bs-primary); stroke-width: 5; }
+.sov-map-swatch { display: inline-block; width: .85rem; height: .85rem; border: 1px solid var(--bs-body-color); margin-right: .3rem; vertical-align: middle; }
+.sov-map-candidate { stroke: #d99a00; stroke-width: 3; fill: none; }
+.sov-map-gate { stroke: var(--bs-secondary-color, #888); opacity: .4; }
+.sov-map-ansiblex { stroke: #d99a00; stroke-width: 1.5; stroke-dasharray: 5 4; opacity: .8; }
+.sov-map-route { stroke: var(--bs-info, #17a2b8); stroke-width: 2.5; fill: none; }
+.sov-map-route.invalid { stroke: var(--bs-danger); stroke-dasharray: 6 4; }
+.sov-map-nearby { max-height: 15rem; overflow-y: auto; }
+@media (max-width: 1000px) {
+  .sov-map-layout { grid-template-columns: minmax(0, 1fr); }
+  .sov-map-canvas { height: 55vh; min-height: 320px; }
+  .sov-map-selection { max-height: 28rem; }
+}
