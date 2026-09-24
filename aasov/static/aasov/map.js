@@ -22,7 +22,8 @@
         return candidates.filter(n => rangeFilter.value === "all" ||
             (rangeFilter.value === "online" ? nodes.get(n.id)?.logistics === "online" : Boolean(nodes.get(n.id)?.logistics)));
     }
-    const point = n => [(n.position[0] - origin[0]) / unit, -(n.position[1] - origin[1]) / unit];
+    const spacing = document.getElementById("sov-map-spacing");
+    const point = n => [(n.position[0] - origin[0]) / unit * Number(spacing.value), -(n.position[1] - origin[1]) / unit * Number(spacing.value)];
     const distance = value => value == null ? "Unknown" : `${value.toFixed(3)} LY`;
     const number = value => value.toLocaleString();
     function element(tag, text, className) {
@@ -262,6 +263,7 @@
     }
     chooser.addEventListener("change", () => { if (chooser.value) select(Number(chooser.value)); });
     rangeFilter.addEventListener("change", () => { draw(); showSelection(); });
+    spacing.addEventListener("change", () => { fit(); draw(); });
     panel.addEventListener("change", event => { if (event.target.matches("[data-map-layer]")) draw(); });
     panel.addEventListener("click", event => {
         const node=event.target.closest("[data-map-node], [data-map-select]");

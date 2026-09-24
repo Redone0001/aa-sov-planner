@@ -100,6 +100,8 @@ Restart AA web services and Celery workers, then run `python manage.py aasov_sna
 
 ## Map and Ansiblex range preview (0.4.0)
 
+Since **0.4.3**, default **Comfortable** spacing spreads system centers 60% farther apart relative to their boxes, leaving more room for route arrows. Choose **Compact** for the previous spacing or **Spacious** for additional separation. Changing spacing fits the plan; zoom in for larger text. This preserves the schematic arrangement and does not affect LY calculations.
+
 Since **0.4.2**, systems use rounded rectangular nodes with the system name centered inside. Width adapts to the name, text switches between light and dark for contrast with the zone color, and selection/range outlines follow the rectangle. Upgrade icons remain below each system.
 
 Since **0.4.1**, system circles are three times larger, upgrade icons appear below them by default, and optional upgrade labels form a vertical list. Icons use the [EVE Image Server](https://developers.eveonline.com/docs/services/image-server/); hovering shows the upgrade name and status, and unavailable icons display a question mark. The **Ansiblex range** selector can restrict candidate highlights, connection lines, the candidate list and **Fit 5 LY range** to systems with **Advanced Logistics present (any status)** or **Advanced Logistics online only**. These filters use this plan's upgrades; outside-plan systems have unknown upgrade status and are excluded. Other planned systems remain on the map for context.
