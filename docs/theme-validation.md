@@ -73,3 +73,8 @@ Flatly, Darkly and Materia checks verify rounded rectangular system nodes, cente
 ## Workforce balancing (0.5.0)
 
 Browser checks passed in Flatly, Darkly and Materia on AA 5.3.1. Each synthetic plan covered a 2,000 workforce deficit using two adjacent donors, previewed the transfers, and applied them with zero document navigations or JavaScript errors. Checks verified two saved routes and zero remaining workforce deficit. The Darkly check started in Map view and confirmed that it stayed open with both refreshed workforce arrows. The Darkly preview was also visually inspected. All fixture data was synthetic.
+
+
+## Temporary upgrades (0.6.0)
+
+Flatly, Darkly and Materia browser checks on AA 5.3.1 verified saving Temporary upgrades, remembered status, separate current/planned resource balances and bars, current-only deficit warnings, and inclusion of Temporary Advanced Logistics in the online-only range filter. All edits completed with zero document navigations and no JavaScript errors. The Darkly layout was visually inspected. Fixtures used synthetic systems and resources.

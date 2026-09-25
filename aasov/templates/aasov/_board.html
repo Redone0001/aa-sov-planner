@@ -6,7 +6,7 @@
   <span class="badge text-bg-secondary">{% if can_manage %}Plan Manager{% elif can_edit %}Editor{% else %}Read only{% endif %}</span>
 </div>
 <div class="table-responsive"><table class="table table-hover align-middle sov-table">
-  <caption>Remaining resource bars are capped at 0–100%; numbers show the full balance. Expand Details for fuel and transit paths.</caption>
+  <caption>Current: Online + Temporary. Planned: Online + Planned. Remaining resource bars are capped at 0–100%; numbers show the full balance. Expand Details for fuel and transit paths.</caption>
   <thead><tr><th scope="col">System / owner / workforce mode</th><th scope="col">Power</th><th scope="col">Workforce</th><th scope="col">Upgrades</th></tr></thead>
   {% for group in constellations %}
   <tbody data-constellation="{{ group.constellation.pk }}">
@@ -41,22 +41,26 @@
       </th>
       <td>
         <div class="sov-resource"><span>Initial</span><span>{{ b.initial_power|intcomma }}</span></div>
-        <div class="sov-resource"><span>Used / generated</span><span>{{ b.power_used|intcomma }} / +{{ b.power_generated|intcomma }}</span></div>
-        <div class="sov-resource fw-bold {% if b.power_left < 0 %}text-danger{% endif %}"><span>Left</span><span>{{ b.power_left|intcomma }}</span></div>
+        <div class="sov-resource"><span title="Planned: Online + Planned">Used / generated</span><span>{{ b.power_used|intcomma }} / +{{ b.power_generated|intcomma }}</span></div>
+        <div class="sov-resource fw-bold {% if b.power_left < 0 %}text-danger{% endif %}"><span>Planned left</span><span>{{ b.power_left|intcomma }}</span></div>
         <div class="progress mt-1 {% if b.power_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} power remaining" aria-valuenow="{{ b.power_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.power_left }} power remaining"><div class="progress-bar {% if b.power_left < 0 %}bg-danger{% else %}bg-primary{% endif %}" style="width: {{ b.power_percent }}%"></div></div>
+        <div class="sov-resource fw-bold {% if b.current.power_left < 0 %}text-danger{% endif %}"><span>Current left</span><span>{{ b.current.power_left|intcomma }}</span></div>
+        <div class="progress mt-1 {% if b.current.power_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} current power remaining" aria-valuenow="{{ b.current.power_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.current.power_left }} power remaining"><div class="progress-bar {% if b.current.power_left < 0 %}bg-danger{% else %}bg-info{% endif %}" style="width: {{ b.current.power_percent }}%"></div></div>
         <small class="text-body-secondary">Imported: 0 · local only</small>
       </td>
       <td>
         <div class="sov-resource"><span>Initial</span><span>{{ b.initial_workforce|intcomma }}</span></div>
-        <div class="sov-resource"><span>Used / generated</span><span>{{ b.workforce_used|intcomma }} / +{{ b.workforce_generated|intcomma }}</span></div>
+        <div class="sov-resource"><span title="Planned: Online + Planned">Used / generated</span><span>{{ b.workforce_used|intcomma }} / +{{ b.workforce_generated|intcomma }}</span></div>
         <div class="sov-resource"><span>Import / export</span><span>+{{ b.imported|intcomma }} / −{{ b.exported|intcomma }}</span></div>
-        <div class="sov-resource fw-bold {% if b.workforce_left < 0 %}text-danger{% endif %}"><span>Left</span><span>{{ b.workforce_left|intcomma }}</span></div>
+        <div class="sov-resource fw-bold {% if b.workforce_left < 0 %}text-danger{% endif %}"><span>Planned left</span><span>{{ b.workforce_left|intcomma }}</span></div>
         <div class="progress mt-1 {% if b.workforce_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} workforce remaining" aria-valuenow="{{ b.workforce_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.workforce_left }} workforce remaining"><div class="progress-bar {% if b.workforce_left < 0 %}bg-danger{% else %}bg-success{% endif %}" style="width: {{ b.workforce_percent }}%"></div></div>
+        <div class="sov-resource fw-bold {% if b.current.workforce_left < 0 %}text-danger{% endif %}"><span>Current left</span><span>{{ b.current.workforce_left|intcomma }}</span></div>
+        <div class="progress mt-1 {% if b.current.workforce_left < 0 %}sov-deficit{% endif %}" role="progressbar" aria-label="{{ b.system }} current workforce remaining" aria-valuenow="{{ b.current.workforce_percent }}" aria-valuemin="0" aria-valuemax="100" aria-valuetext="{{ b.current.workforce_left }} workforce remaining"><div class="progress-bar {% if b.current.workforce_left < 0 %}bg-danger{% else %}bg-info{% endif %}" style="width: {{ b.current.workforce_percent }}%"></div></div>
         <div class="progress mt-1" role="progressbar" aria-label="{{ b.system }} imported share of workforce" aria-valuenow="{{ b.import_percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-info" style="width: {{ b.import_percent }}%"></div></div><small class="text-body-secondary">Imported share: {{ b.import_percent }}%</small>
       </td>
       <td>
         {% for u in b.upgrades %}<div class="sov-upgrade d-flex align-items-start gap-2">
-          <div class="flex-grow-1">{{ u.upgrade.item_type.name }} <span class="badge {% if u.status == 'online' %}text-bg-success{% elif u.status == 'planned' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">{{ u.get_status_display }}</span></div>
+          <div class="flex-grow-1">{{ u.upgrade.item_type.name }} <span class="badge {% if u.status == 'online' %}text-bg-success{% elif u.status == 'temporary' %}text-bg-warning{% elif u.status == 'planned' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">{{ u.get_status_display }}</span></div>
           {% if can_edit %}{% if u.status == 'planned' %}<form data-sov-action method="post" action="{% url 'aasov:upgrade_installed' project.pk b.system.pk u.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success sov-installed" type="submit" title="Mark installed (Online)" aria-label="Mark {{ u.upgrade.item_type.name }} as installed in {{ b.system }}">✓</button></form>{% endif %}<a data-sov-edit class="small" href="{% url 'aasov:upgrade_edit'  project.pk b.system.pk u.pk %}">Edit</a><form data-sov-delete method="post" action="{% url 'aasov:remove' project.pk 'upgrade' u.pk %}">{% csrf_token %}<button class="btn btn-link btn-sm text-danger p-0" type="submit" aria-label="Remove {{ u.upgrade.item_type.name }} from {{ b.system }}">×</button></form>{% endif %}
         </div>{% empty %}<span class="small text-body-secondary">No upgrades planned.</span>{% endfor %}
         <div class="d-flex align-items-center gap-3 mt-1">
@@ -81,5 +85,7 @@
 </details>
 <details class="sov-details" data-details-key="fuel"><summary class="h6">Fuel requirements</summary>
   {% for fuel in fuel_totals %}<div><strong>{{ fuel.name }}</strong>: {{ fuel.hourly|intcomma }} / hour · {{ fuel.startup|intcomma }} to start planned upgrades</div>{% empty %}<p>No fuel-consuming active upgrades.</p>{% endfor %}
-  <p class="small text-body-secondary">Includes planned and online upgrades. Fuel must be supplied separately; stock and delivery are not tracked.</p>
+  <h3 class="h6 mt-2">Current fuel</h3>
+  {% for fuel in current_fuel_totals %}<div><strong>{{ fuel.name }}</strong>: {{ fuel.hourly|intcomma }} / hour</div>{% empty %}<p>No fuel-consuming current upgrades.</p>{% endfor %}
+  <p class="small text-body-secondary">Planned fuel includes Online + Planned. Current fuel includes Online + Temporary. Fuel must be supplied separately; stock and delivery are not tracked.</p>
 </details>

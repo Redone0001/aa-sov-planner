@@ -80,11 +80,12 @@ class PlannedUpgrade(models.Model):
     class Status(models.TextChoices):
         PLANNED = "planned", "Planned"
         ONLINE = "online", "Online"
+        TEMPORARY = "temporary", "Temporary"
         OFFLINE = "offline", "Offline"
 
     system = models.ForeignKey(PlannedSystem, on_delete=models.CASCADE, related_name="upgrades")
     upgrade = models.ForeignKey("eve_sde.SovereigntyUpgrade", on_delete=models.PROTECT)
-    status = models.CharField(max_length=7, choices=Status.choices, default=Status.PLANNED)
+    status = models.CharField(max_length=9, choices=Status.choices, default=Status.PLANNED)
 
     class Meta:
         constraints = [

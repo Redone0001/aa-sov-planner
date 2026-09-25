@@ -98,6 +98,8 @@ class Budget:
     exports: list = field(default_factory=list)
     transit_routes: list = field(default_factory=list)
 
+    current: "Budget | None" = None
+
     @property
     def power_left(self):
         return self.initial_power + self.power_generated - self.power_used
@@ -136,6 +138,32 @@ def percentage(value, total):
 def calculate_project(project):
     nodes, graph = project_graph(project.pk)
     resources = sde.resources_for([s.solar_system_id for s in nodes.values()])
+    upgrades = list(
+        PlannedUpgrade.objects.filter(system__project=project)
+        .select_related("upgrade__item_type", "upgrade__fuel_item_type")
+        .order_by("pk")
+    )
+    routes = list(
+        WorkforceRoute.objects.filter(source__project=project)
+        .select_related("source__solar_system", "destination__solar_system")
+        .order_by("pk")
+    )
+    planned = _calculate_project(nodes, graph, resources, upgrades, routes, {"online", "planned"})
+    current = _calculate_project(nodes, graph, resources, upgrades, routes, {"online", "temporary"})
+    current_budgets = {b.system.pk: b for b in current["budgets"]}
+    for b in planned["budgets"]:
+        b.current = current_budgets[b.system.pk]
+        future_warnings = b.warnings
+        b.warnings = [
+            ("Current and planned: " if w in b.current.warnings else "Planned: ") + w
+            for w in future_warnings
+        ] + ["Current: " + w for w in b.current.warnings if w not in future_warnings]
+    planned["current_fuel_totals"] = current["fuel_totals"]
+    planned["warning_count"] = sum(bool(b.warnings) for b in planned["budgets"])
+    return planned
+
+
+def _calculate_project(nodes, graph, resources, upgrades, routes, active_statuses):
     budgets = {}
     fuel_totals = defaultdict(lambda: {"hourly": 0, "startup": 0, "name": ""})
     for pk, system in nodes.items():
@@ -145,11 +173,6 @@ def calculate_project(project):
             b.warnings.append(
                 "SDE resource data is incomplete. Reload the SDE before relying on this budget."
             )
-    upgrades = (
-        PlannedUpgrade.objects.filter(system__project=project)
-        .select_related("upgrade__item_type", "upgrade__fuel_item_type")
-        .order_by("pk")
-    )
     groups = defaultdict(Counter)
     inventory = {}
     for planned in upgrades:
@@ -162,7 +185,7 @@ def calculate_project(project):
         item["all"] += 1
         if planned.status == PlannedUpgrade.Status.PLANNED:
             item["planned"] += 1
-        if planned.status == PlannedUpgrade.Status.OFFLINE:
+        if planned.status not in active_statuses:
             continue
         b.power_used += u.power_allocation or 0
         b.workforce_used += u.workforce_allocation or 0
@@ -186,11 +209,6 @@ def calculate_project(project):
             total["name"] = fuel["name"]
             total["hourly"] += fuel["hourly"]
             total["startup"] += fuel["startup"]
-    routes = list(
-        WorkforceRoute.objects.filter(source__project=project)
-        .select_related("source__solar_system", "destination__solar_system")
-        .order_by("pk")
-    )
     route_rows = []
     for route in routes:
         path = find_route(route.source_id, route.destination_id, nodes, graph)

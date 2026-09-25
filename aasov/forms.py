@@ -40,6 +40,10 @@ class UpgradeForm(StyledForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["status"].help_text = (
+            "Temporary is installed now: current budgets use Online + Temporary; "
+            "planned budgets use Online + Planned. Offline counts in neither."
+        )
         self.fields["upgrade"].queryset = SovereigntyUpgrade.objects.select_related(
             "item_type"
         ).order_by("item_type__name")

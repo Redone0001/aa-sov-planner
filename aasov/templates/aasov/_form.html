@@ -1,6 +1,6 @@
 <form enctype="multipart/form-data" method="post" action="{{ action }}" data-sov-form {% if preview_url %}data-route-preview="{{ preview_url }}"{% endif %}>
 {% csrf_token %}
-{% if csv_help %}<p class="small">Upload upgrades for systems already in this project. Every imported entry becomes <strong>Planned</strong>; matching Online/Offline entries will be reset to Planned. Other upgrades and routes stay unchanged. Resource deficits and exclusivity conflicts are allowed and flagged.</p><p><a href="{% url 'aasov:csv_template' project.pk %}">Download minimal CSV template</a> · <a href="{% url 'aasov:csv_upload' project.pk %}" data-sov-edit>Start a new upload</a></p>{% endif %}
+{% if csv_help %}<p class="small">Upload upgrades for systems already in this project. Every imported entry becomes <strong>Planned</strong>; matching Online/Temporary/Offline entries will be reset to Planned. Other upgrades and routes stay unchanged. Resource deficits and exclusivity conflicts are allowed and flagged.</p><p><a href="{% url 'aasov:csv_template' project.pk %}">Download minimal CSV template</a> · <a href="{% url 'aasov:csv_upload' project.pk %}" data-sov-edit>Start a new upload</a></p>{% endif %}
 {% if csv_preview %}{% include 'aasov/_csv_preview.html' %}{% endif %}
 {% if explanation %}<p>{{ explanation }}</p>{% endif %}
   {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}

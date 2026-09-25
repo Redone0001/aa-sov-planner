@@ -75,7 +75,7 @@ Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project
 
 1. Open **Administration → Sovereignty Planner → Projects → Add**. Enter a name and select regions and/or individual systems. Regions include player-claimable nullsec systems only; NPC-owned systems, empire space and wormholes are excluded.
 2. Open **Sovereignty Planner** from the AA menu and choose the project.
-3. Add upgrades and choose Planned, Online or Offline. Editors can click **✓** beside a Planned upgrade to mark it installed (Online), without reloading the page. Save even if the budget is negative; a red warning identifies the system and deficit. Exclusivity conflicts are saved as warnings too, so alternative plans can be compared.
+3. Add upgrades and choose Planned, Online, Temporary or Offline. Editors can click **✓** beside a Planned upgrade to mark it installed (Online), without reloading the page. Save even if the budget is negative; a red warning identifies the system and deficit. Exclusivity conflicts are saved as warnings too, so alternative plans can be compared.
 4. Click **Import from…** or **Export to…** beside a system, then choose the other endpoint and workforce amount. **Export to…** lists only systems already in Import mode; set the receiving system to Import first if needed. Saving sets the source to Export and the receiver to Import. Intermediate systems must be **Transit**; all new systems default to Transit.
 5. Check the live route preview before saving: it shows the complete shortest stargate path through the project’s Transit systems. Connectivity is checked again when saved. Disconnected paths, self-imports, exceeded import/export limits and changes that would break existing routes are rejected. Each system displays its sources, destination and route paths.
 6. Inspect the route paths, local balances and fuel requirements. Adjust or remove routes before changing a mode that would break connectivity. Alternate valid transit paths are found automatically.
@@ -97,6 +97,27 @@ python manage.py collectstatic --noinput
 ```
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
+
+## Temporary upgrades and two budgets (0.6.0)
+
+Choose **Temporary** for an upgrade installed and online now that will be replaced in the intended plan. Each system shows two power/workforce balances and progress bars:
+
+- **Current:** Online + Temporary.
+- **Planned:** Online + Planned.
+
+Offline upgrades count in neither. Resource production, consumption, fuel and mutually exclusive upgrades are evaluated separately for each setup. Both use the same workforce routes. A Temporary tier can coexist with a Planned replacement without a false exclusivity warning; an Online tier counts in both setups. Warnings identify which setup has a problem. Temporary upgrades are included in **All** inventory, excluded from **Planned**, and count as online in the Advanced Logistics range filter.
+
+Workforce balancing covers the larger deficit per system and only exports spare workforce available in both setups. Best ratting preserves Temporary upgrades, does not select those same upgrade entries for the future plan, and checks both setups when adjusting routes. Temporary status is remembered when adding upgrades. CSV uploads still set all selected entries to Planned, including matching Temporary entries, as shown in their preview.
+
+Upgrade in your AA virtual environment, then restart AA web services and workers:
+
+```bash
+pip install --upgrade git+https://github.com/Redone0001/aa-sov-planner.git
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+Migration 0005 expands the status field; existing upgrade statuses are preserved.
 
 ## Workforce balancing (0.5.0)
 
@@ -141,7 +162,7 @@ Restart AA web services and workers. Migration `0004_project_capital` adds the s
 
 ## Upgrade inventory (0.3.1)
 
-The expandable inventory line at the top of each plan totals upgrades by item across all systems. **Planned (copy)** copies only planned upgrades; **All (copy)** includes planned, online and offline upgrades. Each clipboard line contains `item<TAB>quantity`, without a header, ready to paste into a shopping list or spreadsheet. Inventory updates after edits without a page reload, and is available to read-only users too.
+The expandable inventory line at the top of each plan totals upgrades by item across all systems. **Planned (copy)** copies only planned upgrades; **All (copy)** includes planned, online, temporary and offline upgrades. Each clipboard line contains `item<TAB>quantity`, without a header, ready to paste into a shopping list or spreadsheet. Inventory updates after edits without a page reload, and is available to read-only users too.
 
 ## CSV import (0.3.0)
 
@@ -160,7 +181,7 @@ YOUR-SYSTEM,Minor Threat Detection Array II
 - System names or EVE solar-system IDs; SDE upgrade names or type IDs. Names ignore case/extra whitespace; numbered tiers accept Roman or Arabic numerals, including `Major Threat 3` as shorthand. Ambiguous or unknown names are errors, never fuzzy matches.
 - Common headers are detected automatically. For unusual headings, enter the system column and upgrade column names or their 1-based numbers. Explicit upgrade-column overrides refer to cells containing upgrade names/IDs. Extra workforce, power, status, notes and other unrecognised columns are ignored and listed in the preview.
 
-Every selected entry becomes **Planned**, including matches currently Online or Offline. The preview explicitly shows those resets. Duplicate system/upgrade pairs are collapsed; already-Planned matches are unchanged. Other upgrades, routes and resource data are not overwritten. Systems must already be in the project; the importer never adds or restores excluded systems.
+Every selected entry becomes **Planned**, including matches currently Online, Temporary or Offline. The preview explicitly shows those resets. Duplicate system/upgrade pairs are collapsed; already-Planned matches are unchanged. Other upgrades, routes and resource data are not overwritten. Systems must already be in the project; the importer never adds or restores excluded systems.
 
 Review the preview and choose **Import as Planned**. Any row error blocks the entire import. Saving is atomic, and a concurrent change to an affected upgrade invalidates the preview. Previews expire after 15 minutes. Negative budgets and mutually exclusive planned upgrades are allowed and warned about as with manual editing.
 
@@ -245,7 +266,7 @@ Workforce left = natural workforce + active production + imports − exports −
 - Projects represent systems belonging to **one alliance**. Ownership is an ESI snapshot, not live eligibility validation. Skyhook activity, upgrade online state and available fuel are not queried. No ESI credentials or in-game changes are involved.
 - Workforce amounts are planning allocations, entered manually or proposed by Best ratting. Over-allocation is allowed to expose deficits, and an export above natural workforce is explicitly flagged because generated workforce cannot leave its system. A recipient can therefore have a provisional positive budget while its exporter has a shortage; check all project warnings before treating a plan as feasible.
 - Power never transfers. Transit flow is displayed separately and adds nothing to the transit system's local budget. The three-source limit applies to final imports, not transit hops.
-- Fuel values are requirements, not stock checks or supply-chain simulation. Planned upgrades include startup cost; online upgrades already started; offline upgrades contribute zero.
+- Fuel values are requirements, not stock checks or supply-chain simulation. Planned upgrades include startup cost; online and temporary upgrades already started; offline upgrades contribute zero.
 - SDE updates immediately affect displayed budgets and paths. Broken routes are flagged and excluded from calculations. Automatic routes may change when connectivity/modes change. Plans do not snapshot historical SDE values.
 - This is an advisory resource planner, not a complete simulation of all in-game installation, security, sovereignty ownership, priority or low-power-state restrictions. It intentionally allows infeasible resource plans, as requested.
 

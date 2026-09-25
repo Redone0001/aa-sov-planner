@@ -63,10 +63,15 @@ def project_map(project, context, can_edit, can_manage):
             else None,
             mode=system.get_mode_display(),
             warnings=b.warnings,
-            power={"initial": b.initial_power, "left": b.power_left},
+            power={
+                "initial": b.initial_power,
+                "left": b.power_left,
+                "current_left": b.current.power_left,
+            },
             workforce={
                 "initial": b.initial_workforce,
                 "left": b.workforce_left,
+                "current_left": b.current.workforce_left,
                 "imported": b.imported,
                 "exported": b.exported,
                 "transit": b.transiting,

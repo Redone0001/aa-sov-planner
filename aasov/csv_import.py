@@ -61,6 +61,7 @@ YES = {
     "planned",
     "online",
     "installed",
+    "temporary",
     "offline",
 }
 NO = {"", "0", "0.0", "no", "n", "false", "-", "none", "n/a"}

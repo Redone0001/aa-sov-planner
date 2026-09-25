@@ -28,6 +28,13 @@ def ratting_type(upgrade):
     return None
 
 
+def upgrade_groups(upgrade):
+    if upgrade.mutually_exclusive_group:
+        yield ("sde", upgrade.mutually_exclusive_group)
+    if family := sde.upgrade_family(upgrade):
+        yield ("family", family)
+
+
 def upgrade_data(upgrade):
     return [
         upgrade.pk,
@@ -127,10 +134,13 @@ def propose(project, constellation_id, time_limit=10):
 
     chosen = {}
     available = {}
+    current_costs = {}
     for pk in scope:
         b = budgets[pk]
         other = [
-            p.upgrade for p in b.upgrades if p.status != "offline" and not ratting_type(p.upgrade)
+            p.upgrade
+            for p in b.upgrades
+            if p.status in ("online", "planned") and not ratting_type(p.upgrade)
         ]
         preserved_groups = Counter()
         for u in other:
@@ -161,6 +171,60 @@ def propose(project, constellation_id, time_limit=10):
             groups[("family", ratting_type(u)[0])].append(var)
             if u.mutually_exclusive_group:
                 groups[("sde", u.mutually_exclusive_group)].append(var)
+        # Temporary upgrades remain installed but are not part of the future selection.
+        temporary_ids = {p.upgrade_id for p in b.upgrades if p.status == "temporary"}
+        retained_online = {
+            p.upgrade_id for p in b.upgrades if p.status == "online" and ratting_type(p.upgrade)
+        }
+        for uid in temporary_ids:
+            if (pk, uid) in chosen:
+                model.add(chosen[pk, uid] == 0)
+        current_fixed = [
+            p.upgrade
+            for p in b.upgrades
+            if p.status == "temporary" or (p.status == "online" and not ratting_type(p.upgrade))
+        ]
+        if any(u.power_production for u in current_fixed) and any(
+            u.workforce_production for u in current_fixed
+        ):
+            raise ValidationError(f"{b.system} has conflicting current conversion upgrades.")
+        current_groups = defaultdict(list)
+        for u in current_fixed:
+            for key in upgrade_groups(u):
+                current_groups[key].append(1)
+        for u in candidates:
+            if u.pk in retained_online:
+                for key in upgrade_groups(u):
+                    current_groups[key].append(chosen[pk, u.pk])
+        for values in current_groups.values():
+            model.add(sum(values) <= 1)
+        current_power = b.initial_power + sum(
+            (u.power_production or 0) - (u.power_allocation or 0) for u in current_fixed
+        )
+        current_workforce = (
+            b.initial_workforce
+            + sum(
+                (u.workforce_production or 0) - (u.workforce_allocation or 0) for u in current_fixed
+            )
+            + fixed_import[pk]
+            - fixed_export[pk]
+        )
+        model.add(
+            sum(
+                chosen[pk, u.pk] * ((u.power_allocation or 0) - (u.power_production or 0))
+                for u in candidates
+                if u.pk in retained_online
+            )
+            <= current_power
+        )
+        current_costs[pk] = (
+            current_workforce,
+            sum(
+                chosen[pk, u.pk] * ((u.workforce_allocation or 0) - (u.workforce_production or 0))
+                for u in candidates
+                if u.pk in retained_online
+            ),
+        )
         for key, variables in groups.items():
             occupied = sum(
                 1 for u in other if key[0] == "sde" and u.mutually_exclusive_group == key[1]
@@ -239,6 +303,7 @@ def propose(project, constellation_id, time_limit=10):
         imports = sum(v for (s, d), v in amounts.items() if d == pk)
         exports = sum(v for (s, d), v in amounts.items() if s == pk)
         model.add(exports + fixed_export[pk] <= budgets[pk].initial_workforce)
+        model.add(current_costs[pk][1] <= current_costs[pk][0] + imports - exports)
         model.add(
             sum(
                 chosen[pk, u.pk] * ((u.workforce_allocation or 0) - (u.workforce_production or 0))
@@ -323,12 +388,16 @@ def preview_rows(project, proposal):
     catalog = {u.pk: u for u in candidates}
     rows = []
     for pk, node in scope.items():
-        old = [p for p in budgets[pk].upgrades if ratting_type(p.upgrade) and p.status != "offline"]
+        old = [
+            p
+            for p in budgets[pk].upgrades
+            if ratting_type(p.upgrade) and p.status in ("online", "planned")
+        ]
         selected = [catalog[uid] for uid in proposal["selected"][str(pk)]]
         kept = [
             p.upgrade
             for p in budgets[pk].upgrades
-            if not ratting_type(p.upgrade) and p.status != "offline"
+            if not ratting_type(p.upgrade) and p.status in ("online", "planned")
         ]
         planned = kept + selected
         imported = sum(amount for s, d, amount in proposal["routes"] if d == pk)
@@ -338,12 +407,29 @@ def preview_rows(project, proposal):
             if r.pk not in proposal["remove_routes"] and row["valid"]:
                 imported += r.amount if r.destination_id == pk else 0
                 exported += r.amount if r.source_id == pk else 0
+        current_upgrades = [
+            p.upgrade
+            for p in budgets[pk].upgrades
+            if p.status == "temporary"
+            or (p.status == "online" and (not ratting_type(p.upgrade) or p.upgrade in selected))
+        ]
         rows.append(
             {
                 "system": node,
                 "old": old,
                 "upgrades": selected,
                 "mode": proposal["modes"][str(pk)],
+                "current_power": budgets[pk].initial_power
+                + sum(
+                    (u.power_production or 0) - (u.power_allocation or 0) for u in current_upgrades
+                ),
+                "current_workforce": budgets[pk].initial_workforce
+                + sum(
+                    (u.workforce_production or 0) - (u.workforce_allocation or 0)
+                    for u in current_upgrades
+                )
+                + imported
+                - exported,
                 "power": budgets[pk].initial_power
                 + sum((u.power_production or 0) - (u.power_allocation or 0) for u in planned),
                 "workforce": budgets[pk].initial_workforce
@@ -390,7 +476,7 @@ def apply_proposal(project_id, proposal):
     for pk, node in scope.items():
         selected = set(proposal["selected"][str(pk)])
         for planned in node.upgrades.select_related("upgrade__item_type"):
-            if ratting_type(planned.upgrade):
+            if ratting_type(planned.upgrade) and planned.status != "temporary":
                 planned.status = (
                     (planned.status if planned.status == "online" else "planned")
                     if planned.upgrade_id in selected

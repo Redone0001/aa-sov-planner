@@ -22,7 +22,8 @@ def test_sde_resource_aggregation_and_upgrade_states(world):
     assert (b.initial_power, b.initial_workforce) == (1000, 10000)
     assert (b.power_left, b.workforce_left) == (-300, -3000)
     assert b.power_percent == b.workforce_percent == 0
-    assert len(b.warnings) == 2
+    assert len(b.warnings) == 3
+    assert "Current: Workforce deficit: 2,000." in b.warnings
 
 
 def test_conversion_fuel_and_local_only_generation(world):

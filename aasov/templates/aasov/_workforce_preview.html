@@ -1,10 +1,10 @@
 {% load humanize %}
-<p>Cover workforce deficits using spare natural workforce from direct stargate neighbours in this plan. Existing routes and upgrades are preserved. Occupied transit systems remain Transit. Each exporter serves one destination; each importer accepts up to three sources.</p>
-<div class="alert {% if balance.remaining %}alert-warning{% else %}alert-success{% endif %}">Workforce deficit covered: {{ balance.covered|intcomma }}. Remaining deficit: {{ balance.remaining|intcomma }}.</div>
+<p>Cover workforce deficits using spare natural workforce from direct stargate neighbours in this plan. Both Current (Online + Temporary) and Planned (Online + Planned) budgets are protected. Existing routes and upgrades are preserved. Occupied transit systems remain Transit. Each exporter serves one destination; each importer accepts up to three sources.</p>
+<div class="alert {% if balance.remaining %}alert-warning{% else %}alert-success{% endif %}">Workforce deficit covered: {{ balance.covered|intcomma }}. Remaining deficit: {{ balance.remaining|intcomma }}. Uses the larger deficit per system across the two setups.</div>
 {% if not balance.optimal %}<p class="text-warning">Time limit reached; this proposal is feasible but may not cover the maximum possible deficit.</p>{% endif %}
 <h3 class="h6">Proposed transfers</h3>
 {% for r in balance.routes %}<div>{{ r.source }} → {{ r.destination }}: {{ r.amount|intcomma }} workforce {% if r.existing %}(increase by {{ r.extra|intcomma }}){% else %}(new route){% endif %}</div>{% empty %}<p>No transfers can improve this plan under these constraints.</p>{% endfor %}
-<div class="table-responsive mt-3"><table class="table table-sm"><thead><tr><th>System</th><th>Current workforce left</th><th>Proposed workforce left</th></tr></thead><tbody>
-{% for row in balance.rows %}<tr><td>{{ row.system }}</td><td>{{ row.before|intcomma }}</td><td class="{% if row.after < 0 %}text-danger{% endif %}">{{ row.after|intcomma }}</td></tr>{% empty %}<tr><td colspan="3">No workforce deficits.</td></tr>{% endfor %}
+<div class="table-responsive mt-3"><table class="table table-sm"><thead><tr><th>System</th><th>Planned left: before → after</th><th>Current left: before → after</th></tr></thead><tbody>
+{% for row in balance.rows %}<tr><td>{{ row.system }}</td><td class="{% if row.after < 0 %}text-danger{% endif %}">{{ row.before|intcomma }} → {{ row.after|intcomma }}</td><td class="{% if row.current_after < 0 %}text-danger{% endif %}">{{ row.current_before|intcomma }} → {{ row.current_after|intcomma }}</td></tr>{% empty %}<tr><td colspan="3">No workforce deficits.</td></tr>{% endfor %}
 </tbody></table></div>
 <p class="small text-body-secondary">Applying sets affected sources to Export and receivers to Import. Power deficits and upgrade conflicts are unchanged. Preview expires in 15 minutes; plan changes require a new preview.</p>

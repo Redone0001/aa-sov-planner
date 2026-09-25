@@ -20,7 +20,7 @@
     function rangeCandidates() {
         const nodes = nodeMap();
         return candidates.filter(n => rangeFilter.value === "all" ||
-            (rangeFilter.value === "online" ? nodes.get(n.id)?.logistics === "online" : Boolean(nodes.get(n.id)?.logistics)));
+            (rangeFilter.value === "online" ? ["online", "temporary"].includes(nodes.get(n.id)?.logistics) : Boolean(nodes.get(n.id)?.logistics)));
     }
     const spacing = document.getElementById("sov-map-spacing");
     const point = n => [(n.position[0] - origin[0]) / unit * Number(spacing.value), -(n.position[1] - origin[1]) / unit * Number(spacing.value)];
@@ -138,7 +138,7 @@
                     const x = (i % columns) * 22 - columns * 11;
                     const y = 35 + Math.floor(i / columns) * 24;
                     const icon = svg("g", {class:"sov-map-upgrade-icon"}, group);
-                    svg("rect", {x,y,width:20,height:20,rx:2,fill:"var(--bs-body-bg)",stroke:u.status === "online" ? "var(--bs-success)" : u.status === "planned" ? "var(--bs-primary)" : "var(--bs-secondary)"},icon);
+                    svg("rect", {x,y,width:20,height:20,rx:2,fill:"var(--bs-body-bg)",stroke:u.status === "online" ? "var(--bs-success)" : u.status === "temporary" ? "var(--bs-warning)" : u.status === "planned" ? "var(--bs-primary)" : "var(--bs-secondary)"},icon);
                     // The type ID comes from the SDE; text remains available if images are blocked.
                     const image = svg("image", {x,y,width:20,height:20,href:`https://images.evetech.net/types/${u.type_id}/icon?size=64`,opacity:u.status === "offline" ? .45 : 1},icon);
                     image.addEventListener("error", () => {
@@ -169,8 +169,10 @@
         if (n.planned_id) {
             sidebar.append(element("div", `Owner: ${n.owner}`));
             if (n.owner_observed_at) sidebar.append(element("div", `Snapshot: ${new Date(n.owner_observed_at).toLocaleString()}`, "small text-body-secondary"));
-            sidebar.append(element("div", `Power: ${number(n.power.left)} left / ${number(n.power.initial)} initial`, n.power.left < 0 ? "text-danger" : ""));
-            sidebar.append(element("div", `Workforce: ${number(n.workforce.left)} left / ${number(n.workforce.initial)} initial`, n.workforce.left < 0 ? "text-danger" : ""));
+            sidebar.append(element("div", `Planned power: ${number(n.power.left)} left / ${number(n.power.initial)} initial`, n.power.left < 0 ? "text-danger" : ""));
+            sidebar.append(element("div", `Planned workforce: ${number(n.workforce.left)} left / ${number(n.workforce.initial)} initial`, n.workforce.left < 0 ? "text-danger" : ""));
+            sidebar.append(element("div", `Current power: ${number(n.power.current_left)} left`, n.power.current_left < 0 ? "text-danger" : ""));
+            sidebar.append(element("div", `Current workforce: ${number(n.workforce.current_left)} left`, n.workforce.current_left < 0 ? "text-danger" : ""));
             sidebar.append(element("div", `${n.mode} · Import ${number(n.workforce.imported)} / Export ${number(n.workforce.exported)} / Transit ${number(n.workforce.transit)}`));
             for (const warning of n.warnings) sidebar.append(element("div", `⚠ ${warning}`, "text-danger"));
             const actions = element("div", null, "d-flex flex-wrap gap-1 my-2");

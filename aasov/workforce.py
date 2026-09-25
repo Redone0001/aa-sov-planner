@@ -45,25 +45,30 @@ def inputs(project):
     return nodes, graph, budgets, fingerprint
 
 
+def workforce_left(budget):
+    """One shared route allocation must work for both upgrade scenarios."""
+    return min(budget.workforce_left, budget.current.workforce_left)
+
+
 def propose(project):
     nodes, graph, budgets, fingerprint = inputs(project)
     model = cp_model.CpModel()
     edges = []
     for source, b in sorted(budgets.items()):
-        spare = min(b.workforce_left, b.initial_workforce - b.exported)
+        spare = min(workforce_left(b), b.initial_workforce - b.exported)
         if spare <= 0 or b.imports or b.transit_routes:
             continue
         existing = b.exports[0]["route"] if b.exports else None
         for destination in sorted(graph.get(source, ())):
             target = budgets[destination]
-            if target.workforce_left >= 0 or target.exports or target.transit_routes:
+            if workforce_left(target) >= 0 or target.exports or target.transit_routes:
                 continue
             if existing and existing.destination_id != destination:
                 continue
             if not existing and len(target.imports) >= 3:
                 continue
             current = existing.amount if existing else 0
-            limit = min(spare, -target.workforce_left, 2147483647 - current)
+            limit = min(spare, -workforce_left(target), 2147483647 - current)
             if limit <= 0:
                 continue
             amount = model.new_int_var(0, limit, f"amount_{source}_{destination}")
@@ -80,10 +85,10 @@ def propose(project):
             model.add(sum(e[3] for e in outgoing) <= 1)
             model.add(
                 sum(e[2] for e in outgoing)
-                <= min(b.workforce_left, b.initial_workforce - b.exported)
+                <= min(workforce_left(b), b.initial_workforce - b.exported)
             )
         if incoming:
-            model.add(sum(e[2] for e in incoming) <= -b.workforce_left)
+            model.add(sum(e[2] for e in incoming) <= -workforce_left(b))
             model.add(sum(e[3] for e in incoming if e[4] is None) <= 3 - len(b.imports))
     routes = []
     optimal = True
@@ -104,15 +109,24 @@ def propose(project):
             extra = solver.value(amount)
             if extra:
                 routes.append([source, destination, current + extra, route_id, extra])
-    remaining = {pk: b.workforce_left for pk, b in budgets.items()}
+    remaining = {pk: workforce_left(b) for pk, b in budgets.items()}
+    changes = {pk: 0 for pk in budgets}
     for source, destination, _, _, extra in routes:
+        changes[source] -= extra
+        changes[destination] += extra
         remaining[source] -= extra
         remaining[destination] += extra
     preview = {
         "rows": [
-            {"system": nodes[pk], "before": budgets[pk].workforce_left, "after": value}
+            {
+                "system": nodes[pk],
+                "before": budgets[pk].workforce_left,
+                "after": budgets[pk].workforce_left + changes[pk],
+                "current_before": budgets[pk].current.workforce_left,
+                "current_after": budgets[pk].current.workforce_left + changes[pk],
+            }
             for pk, value in remaining.items()
-            if value != budgets[pk].workforce_left or value < 0
+            if changes[pk] or value < 0
         ],
         "routes": [
             {
@@ -148,6 +162,7 @@ def apply_proposal(project_id, proposal):
     result = calculate_project(project)
     if any(not r["valid"] for r in result["routes"]) or any(
         b.workforce_left < min(0, budgets[b.system.pk].workforce_left)
+        or b.current.workforce_left < min(0, budgets[b.system.pk].current.workforce_left)
         or (b.exported > b.initial_workforce and b.exported > budgets[b.system.pk].exported)
         for b in result["budgets"]
     ):
