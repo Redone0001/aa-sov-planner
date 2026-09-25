@@ -127,7 +127,7 @@ Review the proposed transfers and before/after workforce balances, including any
 
 ## Map and Ansiblex range preview (0.4.0)
 
-Since **0.4.3**, default **Comfortable** spacing spreads system centers 60% farther apart relative to their boxes, leaving more room for route arrows. Choose **Compact** for the previous spacing or **Spacious** for additional separation. Changing spacing fits the plan; zoom in for larger text. This preserves the schematic arrangement and does not affect LY calculations.
+Since **0.6.1**, map spacing defaults to **Compact** and Ansiblex range defaults to **None**. None hides range candidates and skips range lookups while systems remain selectable for editing. Select another Ansiblex mode to show connections. Choose **Comfortable** to spread system centers 60% farther apart relative to their boxes, or **Spacious** for additional separation. Changing spacing fits the plan; zoom in for larger text. This preserves the schematic arrangement and does not affect LY calculations.
 
 Since **0.4.2**, systems use rounded rectangular nodes with the system name centered inside. Width adapts to the name, text switches between light and dark for contrast with the zone color, and selection/range outlines follow the rectangle. Upgrade icons remain below each system.
 

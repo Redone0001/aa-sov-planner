@@ -18,6 +18,7 @@
     const nodeMap = () => new Map([...candidates, ...(data?.nodes || [])].map(n => [n.id, n]));
     const rangeFilter = document.getElementById("sov-map-range-filter");
     function rangeCandidates() {
+        if (rangeFilter.value === "none") return [];
         const nodes = nodeMap();
         return candidates.filter(n => rangeFilter.value === "all" ||
             (rangeFilter.value === "online" ? ["online", "temporary"].includes(nodes.get(n.id)?.logistics) : Boolean(nodes.get(n.id)?.logistics)));
@@ -196,6 +197,7 @@
                 editLink("Edit route",r.edit,row); sidebar.append(row);
             }
         } else sidebar.append(element("p", "Outside this plan. Ownership, upgrades and editing are available only for systems added to the plan.", "text-body-secondary"));
+        if (rangeFilter.value === "none") return;
         sidebar.append(element("h3", "Possible Ansiblex connections", "h6 mt-3"));
         sidebar.append(element("p", "Player-claimable nullsec in range. Both endpoints require the appropriate online infrastructure; ownership and existing links must be checked.", "small text-body-secondary"));
         if (n.planned_id) sidebar.append(element("div", `Advanced Logistics Network here: ${n.logistics || "not in plan"}`, "small"));
@@ -221,7 +223,8 @@
         data.nodes = data.nodes.filter(n => n.planned_id);
         if (!source.planned_id) data.nodes.push(source);
         candidates = [];
-        rangeLoading = true; rangeError = ""; chooser.value = String(id); draw(); showSelection();
+        rangeLoading = rangeFilter.value !== "none"; rangeError = ""; chooser.value = String(id); draw(); showSelection();
+        if (!rangeLoading) return;
         try {
             const result = await request(panel.dataset.rangeUrl.replace("/0/", `/${id}/`));
             if (sequence !== rangeSequence) return;
@@ -264,7 +267,11 @@
         chooser.value=""; draw(); showSelection();
     }
     chooser.addEventListener("change", () => { if (chooser.value) select(Number(chooser.value)); });
-    rangeFilter.addEventListener("change", () => { draw(); showSelection(); });
+    rangeFilter.addEventListener("change", () => {
+        panel.querySelector('[data-map-fit="range"]').disabled = rangeFilter.value === "none";
+        if (selected !== null) select(selected);
+        else { draw(); showSelection(); }
+    });
     spacing.addEventListener("change", () => { fit(); draw(); });
     panel.addEventListener("change", event => { if (event.target.matches("[data-map-layer]")) draw(); });
     panel.addEventListener("click", event => {

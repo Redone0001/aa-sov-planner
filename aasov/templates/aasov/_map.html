@@ -4,11 +4,11 @@
     {% if can_manage %}<a data-sov-edit class="btn btn-sm btn-primary" href="{% url 'aasov:capital' project.pk %}">Set capital</a>{% endif %}
     <label class="visually-hidden" for="sov-map-system">Select system</label><select id="sov-map-system" class="form-select form-select-sm sov-project-switch"><option value="">Select a system…</option></select>
     <button type="button" class="btn btn-sm btn-secondary" data-map-fit="plan">Fit plan</button>
-    <button type="button" class="btn btn-sm btn-secondary" data-map-fit="range">Fit 5 LY range</button>
+    <button type="button" class="btn btn-sm btn-secondary" data-map-fit="range" disabled>Fit 5 LY range</button>
     <button type="button" class="btn btn-sm btn-secondary" data-map-clear>Clear selection</button>
     <label class="small">Spacing <select id="sov-map-spacing" class="form-select form-select-sm d-inline-block w-auto">
-      <option value="1">Compact</option>
-      <option value="1.6" selected>Comfortable</option>
+      <option value="1" selected>Compact</option>
+      <option value="1.6">Comfortable</option>
       <option value="2.2">Spacious</option>
     </select></label>
     <button type="button" class="btn btn-sm btn-secondary" data-map-zoom="0.7" aria-label="Zoom in">+</button>
@@ -23,12 +23,13 @@
     <label><input type="checkbox" data-map-layer="warnings" checked> Resource warnings</label>
   </div>
   <label class="small mb-2">Ansiblex range <select id="sov-map-range-filter" class="form-select form-select-sm d-inline-block w-auto">
+    <option value="none" selected>None</option>
     <option value="all">All systems in range</option>
     <option value="present">Advanced Logistics present (any status)</option>
     <option value="online">Advanced Logistics online only</option>
   </select></label>
   <div id="sov-map-legend" class="d-flex flex-wrap gap-3 small mb-2" aria-label="Capital distance zones"></div>
-  <details class="sov-details small text-body-secondary mb-2"><summary>Click a system to inspect it and show its 5 LY connections · Map help</summary><p class="mb-1">Gold rings mark candidates; dashed outlines mark systems outside this plan. Drag to pan; scroll to zoom. Range is measured in 3D; the diagram uses EVE's 2D layout. A candidate is a range check, not a confirmed or installed Ansiblex link.</p></details>
+  <details class="sov-details small text-body-secondary mb-2"><summary>Click a system to inspect it; enable Ansiblex range to show its 5 LY connections · Map help</summary><p class="mb-1">Gold rings mark candidates; dashed outlines mark systems outside this plan. Drag to pan; scroll to zoom. Range is measured in 3D; the diagram uses EVE's 2D layout. A candidate is a range check, not a confirmed or installed Ansiblex link.</p></details>
   <div id="sov-map-message" class="small mb-2" role="status"></div>
   <div class="sov-map-layout">
     <svg id="sov-map-canvas" class="sov-map-canvas border rounded" viewBox="0 0 1000 650" role="group" aria-label="Sovereignty plan map"></svg>
