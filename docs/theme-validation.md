@@ -94,3 +94,7 @@ Browser checks in Django administration verified required-role validation, savin
 ## Simplified Viewer view (0.7.1)
 
 Flatly, Darkly and Materia browser checks verified the two-column Viewer list, Online/Temporary filtering, exclusion of resource-producing upgrades, filtered inventory clipboard, system filtering, map selection and Ansiblex range. Resource balances, warnings and route controls/data were absent. The project-admin flag and full administrator view were checked separately. No JavaScript errors occurred in the completed run. External images/fonts were blocked to avoid remote asset delays; AA scripts remained enabled. The Darkly layout was visually inspected using synthetic data. Automated tests also verify the filtered map response, privileged-role exceptions, flag-off behaviour and existing visibility restrictions.
+
+## CSV exports and workforce imports (0.8.0)
+
+Flatly, Darkly and Materia browser checks verified upgrade CSV downloads, route-template downloads, route preview without mutation, Apply, refreshed map arrows with selection preserved, and route CSV downloads. No document navigations or JavaScript errors occurred. The Darkly preview was visually inspected. Synthetic data was used; external images/fonts were blocked while AA scripts remained enabled. Automated tests cover export/re-import, Viewer restrictions, permission boundaries, source merging, batch destination swaps, transit validity, duplicate conflicts, route limits, both resource scenarios and stale previews.

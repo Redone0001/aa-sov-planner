@@ -126,3 +126,20 @@ class CSVUploadForm(forms.Form):
 
 class CSVConfirmForm(forms.Form):
     import_preview = forms.CharField(widget=forms.HiddenInput)
+
+
+class RouteCSVUploadForm(forms.Form):
+    csv_file = forms.FileField(
+        label="Workforce routes CSV / TSV",
+        help_text="Up to 2 MiB and 5,000 rows. Required columns: source, destination, workforce. Extra columns are ignored.",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "class": "form-control",
+                "accept": ".csv,.tsv,text/csv,text/tab-separated-values",
+            }
+        ),
+    )
+
+
+class RouteCSVConfirmForm(forms.Form):
+    route_preview = forms.CharField(widget=forms.HiddenInput)

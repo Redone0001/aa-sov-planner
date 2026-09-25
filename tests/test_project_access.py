@@ -72,7 +72,13 @@ def test_hidden_from_index_switcher_and_read_endpoints(world, client, reader):
         html = client.get(reverse(f"aasov:{name}", args=args)).content.decode()
         assert world.project.name not in html
         assert "Public" in html
-    for name, args in [("project", []), ("map_data", []), ("map_range", [system.solar_system_id])]:
+    for name, args in [
+        ("project", []),
+        ("map_data", []),
+        ("csv_export", []),
+        ("route_csv_export", []),
+        ("map_range", [system.solar_system_id]),
+    ]:
         assert (
             client.get(reverse(f"aasov:{name}", args=[world.project.pk, *args])).status_code == 404
         )
@@ -94,6 +100,8 @@ def test_restricted_mutation_and_preview_endpoints(world, client, editor):
         ("capital", []),
         ("csv_upload", []),
         ("csv_template", []),
+        ("route_csv_template", []),
+        ("route_csv_upload", []),
         ("upgrade_installed", [system.pk, item.pk]),
         ("upgrade_offline", [system.pk, item.pk]),
         ("best_ratting", [system.solar_system.constellation_id]),
@@ -108,7 +116,7 @@ def test_restricted_mutation_and_preview_endpoints(world, client, editor):
         ("remove", ["route", 999]),
     ]
     post_only = {"upgrade_installed", "upgrade_offline", "remove"}
-    get_only = {"csv_template", "route_preview"}
+    get_only = {"csv_template", "route_preview", "route_csv_template"}
     for name, args in endpoints:
         url = reverse(f"aasov:{name}", args=[world.project.pk, *args])
         if name not in post_only:

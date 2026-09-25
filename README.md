@@ -98,6 +98,18 @@ python manage.py collectstatic --noinput
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
 
+## CSV exports and workforce route import (0.8.0)
+
+Open **CSV** in the plan header from either List or Map view:
+
+- **Export upgrades CSV:** columns `system,upgrade,status`. Includes the upgrades visible to the current user; simplified Viewers receive only Online/Temporary non-producing upgrades. The existing upgrade importer accepts this file but resets imported entries to Planned, as before.
+- **Export routes CSV:** columns `source,destination,workforce,path`. Available to users with full project visibility, including ordinary Viewers when the simplified-view flag is off. Simplified Viewers cannot download workforce routes.
+- **Import routes CSV:** available to Plan Managers. Download the minimal template from this dialog. Required columns are `source,destination,workforce`; system names (case-insensitive) or EVE solar-system IDs are accepted. Comma, semicolon, tab and pipe separators, common header aliases, UTF-8/UTF-16/Windows-1252, and leading title rows are supported. Extra columns are ignored. Amounts must be positive whole numbers without thousands separators. Maximum 2 MiB / 5,000 data rows.
+
+Route import merges by source: listed sources are added or updated, and unlisted routes remain. Identical duplicates are skipped; conflicting rows for one source are rejected. The preview validates the complete resulting plan: one destination per exporter, at most three sources per importer, separate Import/Export roles, and connected stargate paths through Transit systems. Exported paths are informational and are recomputed on import. No explicit transit path is imported.
+
+Review routes, endpoint-mode changes and current/planned workforce deficits before applying. Resource deficits and exports exceeding natural workforce remain allowed with warnings, matching manual planning. Invalid paths or route limits block the whole import. Apply is atomic; signed previews expire in 15 minutes and changes to planning inputs require a new upload. Upgrades are never modified by route import. The map and budgets refresh without reloading. No new database migration is required for 0.8.0.
+
 ## Simplified Viewer view (0.7.1)
 
 Enable **Simplified view for Viewers** under the project's **Project access** section in Django administration. Viewers then see only **Online** and **Temporary** upgrades, excluding upgrades that produce power or workforce according to the SDE. The list, map icons/labels, logistics status and inventory copy all use this filtered set.

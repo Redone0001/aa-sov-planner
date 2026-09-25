@@ -528,3 +528,127 @@ def upgrade_offline(request, project_id, system_id, upgrade_id):
     except ObjectDoesNotExist as error:
         raise Http404 from error
     return saved(request, plan, "Upgrade set to Offline. Budgets updated.")
+
+
+def csv_response(headers, rows, filename):
+    import csv
+
+    from django.http import HttpResponse
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response.write("\ufeff")
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return response
+
+
+@login_required
+@permission_required("aasov.view_project", raise_exception=True)
+@require_GET
+def csv_export(request, project_id):
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
+    context = project_context(plan, request.user)
+    return csv_response(
+        ["system", "upgrade", "status"],
+        (
+            [str(b.system), u.upgrade.item_type.name, u.status]
+            for b in context["budgets"]
+            for u in b.upgrades
+        ),
+        f"sov-plan-{plan.pk}-upgrades.csv",
+    )
+
+
+@login_required
+@permission_required("aasov.view_project", raise_exception=True)
+@require_GET
+def route_csv_export(request, project_id):
+    from django.core.exceptions import PermissionDenied
+
+    from .presentation import simplified_view
+    from .services import calculate_project
+
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
+    if simplified_view(plan, request.user):
+        raise PermissionDenied
+    return csv_response(
+        ["source", "destination", "workforce", "path"],
+        (
+            [
+                str(row["route"].source),
+                str(row["route"].destination),
+                row["route"].amount,
+                " > ".join(str(node) for node in row["path"]) if row["valid"] else "INVALID ROUTE",
+            ]
+            for row in calculate_project(plan)["routes"]
+        ),
+        f"sov-plan-{plan.pk}-routes.csv",
+    )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.manage_plan"), raise_exception=True)
+@require_GET
+def route_csv_template(request, project_id):
+    get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
+    return csv_response(
+        ["source", "destination", "workforce"],
+        [["SOURCE-SYSTEM", "DESTINATION-SYSTEM", 1000]],
+        "sov-routes-template.csv",
+    )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.manage_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def route_csv_upload(request, project_id):
+    from django.core import signing
+
+    from .forms import RouteCSVConfirmForm, RouteCSVUploadForm
+    from .route_csv import apply_import, parse_import
+
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
+    salt = f"aasov.route_csv.{request.user.pk}"
+    preview = None
+    if request.method == "POST" and "route_preview" in request.POST:
+        form = RouteCSVConfirmForm(request.POST)
+        try:
+            if not form.is_valid():
+                raise ValidationError("Missing preview. Upload the CSV again.")
+            payload = signing.loads(form.cleaned_data["route_preview"], salt=salt, max_age=900)
+            added, updated = apply_import(plan.pk, payload)
+            return saved(
+                request, plan, f"Workforce routes imported: {added} added, {updated} updated."
+            )
+        except (signing.BadSignature, ValidationError) as error:
+            form = RouteCSVUploadForm({})
+            form.add_error(
+                None,
+                "Preview expired or invalid. Upload the CSV again."
+                if isinstance(error, signing.BadSignature)
+                else error,
+            )
+    else:
+        form = RouteCSVUploadForm(
+            request.POST if request.method == "POST" else None, request.FILES or None
+        )
+        if request.method == "POST" and form.is_valid():
+            try:
+                payload, preview = parse_import(plan, form.cleaned_data["csv_file"])
+                form = RouteCSVConfirmForm(
+                    initial={"route_preview": signing.dumps(payload, salt=salt, compress=True)}
+                )
+            except ValidationError as error:
+                validation_error(form, error)
+    return form_page(
+        request,
+        plan,
+        form,
+        "Import workforce routes · CSV",
+        route_csv_help=True,
+        route_csv_preview=preview,
+        submit_label="Apply route import" if preview else "Preview CSV",
+        hide_budget_note=True,
+    )

@@ -4,6 +4,12 @@ from . import views
 
 app_name = "aasov"
 urlpatterns = [
+    path("<int:project_id>/csv/export/", views.csv_export, name="csv_export"),
+    path("<int:project_id>/routes/csv/export/", views.route_csv_export, name="route_csv_export"),
+    path(
+        "<int:project_id>/routes/csv/template/", views.route_csv_template, name="route_csv_template"
+    ),
+    path("<int:project_id>/routes/csv/import/", views.route_csv_upload, name="route_csv_upload"),
     path(
         "<int:project_id>/systems/<int:system_id>/upgrades/<int:upgrade_id>/offline/",
         views.upgrade_offline,

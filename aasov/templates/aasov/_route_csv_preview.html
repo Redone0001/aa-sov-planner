@@ -1,0 +1,10 @@
+{% load humanize %}
+<div class="alert alert-info">{{ route_csv_preview.count }} route{{ route_csv_preview.count|pluralize }} validated. Nothing has changed yet. Review and apply within 15 minutes.</div>
+<p class="small">{{ route_csv_preview.duplicates }} identical duplicate rows skipped. Ignored columns: {{ route_csv_preview.ignored|join:', '|default:'None' }}. Showing up to 200 routes.</p>
+<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Source</th><th>Previous destination / amount</th><th>New destination / amount</th><th>Path</th></tr></thead><tbody>
+{% for row in route_csv_preview.rows %}<tr><td>{{ row.source }}</td><td>{{ row.previous }}</td><td>{{ row.destination }} · {{ row.amount|intcomma }}</td><td>{% for system in row.path %}{{ system }}{% if not forloop.last %} → {% endif %}{% endfor %}</td></tr>{% endfor %}
+</tbody></table></div>
+<h3 class="h6">Workforce mode changes</h3>
+{% for row in route_csv_preview.modes %}<div>{{ row.system }}: {{ row.before|title }} → {{ row.after|title }}</div>{% empty %}<p>No mode changes.</p>{% endfor %}
+{% if route_csv_preview.deficits %}<div class="alert alert-warning mt-2">These routes leave resource warnings. Import is allowed; resolve the remaining deficits in the plan.</div>
+{% for row in route_csv_preview.deficits %}<div class="text-danger">{{ row.system }}: Planned workforce left {{ row.planned|intcomma }} · Current workforce left {{ row.current|intcomma }}{% if row.overexport %} · Export exceeds natural workforce{% endif %}</div>{% endfor %}{% endif %}

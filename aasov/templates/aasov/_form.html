@@ -1,6 +1,8 @@
 <form enctype="multipart/form-data" method="post" action="{{ action }}" data-sov-form {% if preview_url %}data-route-preview="{{ preview_url }}"{% endif %}>
 {% csrf_token %}
 {% if csv_help %}<p class="small">Upload upgrades for systems already in this project. Every imported entry becomes <strong>Planned</strong>; matching Online/Temporary/Offline entries will be reset to Planned. Other upgrades and routes stay unchanged. Resource deficits and exclusivity conflicts are allowed and flagged.</p><p><a href="{% url 'aasov:csv_template' project.pk %}">Download minimal CSV template</a> · <a href="{% url 'aasov:csv_upload' project.pk %}" data-sov-edit>Start a new upload</a></p>{% endif %}
+{% if route_csv_help %}<p>Import routes for systems already in this plan. Required columns: <strong>source, destination, workforce</strong>. Names and EVE system IDs are accepted. Workforce must be a positive integer without thousands separators.</p><p>Rows add or update the route for each source. Unlisted routes are preserved. Endpoints are set to Export/Import; transit paths are recalculated from stargates. Extra columns, including exported path, are ignored.</p><p><a href="{% url 'aasov:route_csv_template' project.pk %}">Download route CSV template</a> · <a data-sov-edit href="{% url 'aasov:route_csv_upload' project.pk %}">Start a new upload</a></p>{% endif %}
+{% if route_csv_preview %}{% include 'aasov/_route_csv_preview.html' %}{% endif %}
 {% if csv_preview %}{% include 'aasov/_csv_preview.html' %}{% endif %}
 {% if explanation %}<p>{{ explanation }}</p>{% endif %}
   {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
