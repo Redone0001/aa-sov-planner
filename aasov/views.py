@@ -10,8 +10,8 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .forms import ModeForm, RouteForm, UpgradeForm
 from .models import PlannedSystem, PlannedUpgrade, Project, WorkforceRoute
+from .presentation import project_context
 from .services import (
-    calculate_project,
     edit_system,
     remove_item,
     remove_system,
@@ -33,7 +33,7 @@ def index(request):
 @permission_required("aasov.view_project", raise_exception=True)
 def project(request, project_id):
     plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
-    context = calculate_project(plan)
+    context = project_context(plan, request.user)
     context.update(
         {
             "project": plan,
@@ -109,7 +109,7 @@ def map_data(request, project_id):
     return JsonResponse(
         project_map(
             plan,
-            calculate_project(plan),
+            project_context(plan, request.user),
             request.user.has_perm("aasov.edit_plan"),
             request.user.has_perm("aasov.manage_plan"),
         )
@@ -150,7 +150,7 @@ def capital(request, project_id):
 
 def saved(request, plan, message):
     if is_async(request):
-        context = calculate_project(plan)
+        context = project_context(plan, request.user)
         context.update(
             project=plan,
             can_edit=request.user.has_perm("aasov.edit_plan"),

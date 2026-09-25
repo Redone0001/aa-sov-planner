@@ -12,7 +12,7 @@
   <a class="btn btn-sm btn-secondary" href="{% url 'aasov:index' %}">All projects</a>
 </div>
 <div class="d-flex flex-wrap gap-2 align-items-start mb-2">
-  <details class="small flex-grow-1"><summary>About this plan / assumptions</summary><p>{{ project.description }}</p><p>Project access: {{ project.visibility_summary }}.</p><div class="text-body-secondary">Budgets use SDE potential with all skyhooks active. This is a plan for systems controlled by one alliance, not live sovereignty or fuel inventory. Current = Online + Temporary. Planned = Online + Planned. Both budgets are checked separately; Offline counts in neither. Power and upgrade-generated workforce stay local.</div></details>
+  <details class="small flex-grow-1"><summary>About this plan / assumptions</summary><p>{{ project.description }}</p><p>Project access: {{ project.visibility_summary }}.</p><div class="text-body-secondary">{% if simplified_view %}Showing Online and Temporary upgrades. Resource-producing upgrades and planning details are hidden.{% else %}Budgets use SDE potential with all skyhooks active. This is a plan for systems controlled by one alliance, not live sovereignty or fuel inventory. Current = Online + Temporary. Planned = Online + Planned. Both budgets are checked separately; Offline counts in neither. Power and upgrade-generated workforce stay local.{% endif %}</div></details>
   <label for="system-filter" class="visually-hidden">Filter systems</label><input id="system-filter" class="form-control form-control-sm sov-search" type="search" placeholder="Filter systems or upgrades…">
 </div>
 <div id="sov-feedback" class="alert" role="status" hidden></div>
@@ -22,7 +22,7 @@
   <button type="button" class="btn btn-sm btn-outline-primary" data-sov-view="map" aria-pressed="false">Map / Ansiblex</button>
 </div>
 {% include 'aasov/_map.html' %}
-<div id="sov-board">{% include 'aasov/_board.html' %}</div>
+<div id="sov-board">{% if simplified_view %}{% include 'aasov/_viewer_board.html' %}{% else %}{% include 'aasov/_board.html' %}{% endif %}</div>
 {% if can_edit or can_manage %}
 <div class="modal fade" id="sov-editor" tabindex="-1" aria-labelledby="sov-editor-title" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">

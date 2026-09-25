@@ -90,3 +90,7 @@ Flatly, Darkly and Materia browser checks verified Offline in the list, Offline 
 ## Project access (0.7.0)
 
 Browser checks in Django administration verified required-role validation, saving multiple allowed roles, persisted checkboxes, and restoring unrestricted access. A separate synthetic viewer session lost both project-list visibility and direct URL access after restriction; the superuser retained access. Automated tests cover role combinations, all project read/preview/mutation endpoints, admin lists/details/bulk actions, and subsequent requests after visibility changes.
+
+## Simplified Viewer view (0.7.1)
+
+Flatly, Darkly and Materia browser checks verified the two-column Viewer list, Online/Temporary filtering, exclusion of resource-producing upgrades, filtered inventory clipboard, system filtering, map selection and Ansiblex range. Resource balances, warnings and route controls/data were absent. The project-admin flag and full administrator view were checked separately. No JavaScript errors occurred in the completed run. External images/fonts were blocked to avoid remote asset delays; AA scripts remained enabled. The Darkly layout was visually inspected using synthetic data. Automated tests also verify the filtered map response, privileged-role exceptions, flag-off behaviour and existing visibility restrictions.

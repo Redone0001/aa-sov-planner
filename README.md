@@ -98,6 +98,14 @@ python manage.py collectstatic --noinput
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
 
+## Simplified Viewer view (0.7.1)
+
+Enable **Simplified view for Viewers** under the project's **Project access** section in Django administration. Viewers then see only **Online** and **Temporary** upgrades, excluding upgrades that produce power or workforce according to the SDE. The list, map icons/labels, logistics status and inventory copy all use this filtered set.
+
+Power/workforce balances, warnings, costs/fuel, workforce modes and transfer routes are omitted from the Viewer page and map response. Systems, ownership, constellation grouping, map navigation and Ansiblex range remain available. Editors, Plan Managers, staff with `aasov.change_project`, and superusers keep the full planning view. Project visibility restrictions still apply. The flag defaults to off, preserving existing behaviour.
+
+Run `python manage.py migrate` for migration 0007 after updating, then collect static files and restart AA services.
+
 ## Project visibility (0.7.0)
 
 In Django administration, open a project and use **Project access**:

@@ -25,6 +25,11 @@ class Project(models.Model):
     objects = ProjectQuerySet.as_manager()
 
     name = models.CharField(max_length=150, unique=True)
+    simplified_viewers = models.BooleanField(
+        default=False,
+        verbose_name="Simplified view for Viewers",
+        help_text="Viewers see only Online and Temporary upgrades, excluding power/workforce producers. Hide resource balances, fuel and workforce routes. Editors, Plan Managers and Administrators retain the full view.",
+    )
     restrict_access = models.BooleanField(
         default=False,
         verbose_name="Restrict project access",

@@ -16,11 +16,11 @@
   </div>
   <div class="d-flex flex-wrap gap-3 small mb-2" id="sov-map-layers">
     <label><input type="checkbox" data-map-layer="gates" checked> Stargates</label>
-    <label><input type="checkbox" data-map-layer="routes" checked> Workforce routes</label>
+    {% if not simplified_view %}<label><input type="checkbox" data-map-layer="routes" checked> Workforce routes</label>{% endif %}
     <label><input type="checkbox" data-map-layer="owners"> Ownership labels</label>
     <label><input type="checkbox" data-map-layer="icons" checked> Upgrade icons</label>
     <label><input type="checkbox" data-map-layer="upgrades"> Upgrade labels</label>
-    <label><input type="checkbox" data-map-layer="warnings" checked> Resource warnings</label>
+    {% if not simplified_view %}<label><input type="checkbox" data-map-layer="warnings" checked> Resource warnings</label>{% endif %}
   </div>
   <label class="small mb-2">Ansiblex range <select id="sov-map-range-filter" class="form-select form-select-sm d-inline-block w-auto">
     <option value="none" selected>None</option>
@@ -33,6 +33,6 @@
   <div id="sov-map-message" class="small mb-2" role="status"></div>
   <div class="sov-map-layout">
     <svg id="sov-map-canvas" class="sov-map-canvas border rounded" viewBox="0 0 1000 650" role="group" aria-label="Sovereignty plan map"></svg>
-    <aside id="sov-map-selection" class="sov-map-selection border rounded p-2" aria-label="Selected system"><p>Select a system to inspect ownership, upgrades, workforce and connection candidates.</p></aside>
+    <aside id="sov-map-selection" class="sov-map-selection border rounded p-2" aria-label="Selected system"><p>Select a system to inspect ownership, upgrades and connection candidates.</p></aside>
   </div>
 </section>

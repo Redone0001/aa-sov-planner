@@ -1,0 +1,25 @@
+<div data-sov-inventory>
+  <details class="sov-details mb-2 small" data-details-key="inventory">
+    <summary>Visible upgrades / <button type="button" class="btn btn-link btn-sm p-0" data-sov-copy="visible">Copy</button></summary>
+    <table class="table table-sm w-auto mb-1"><thead><tr><th>Upgrade</th><th>Quantity</th></tr></thead><tbody>
+      {% for item in inventory %}<tr><td>{{ item.name }}</td><td>{{ item.all }}</td></tr>{% empty %}<tr><td colspan="2">No visible upgrades.</td></tr>{% endfor %}
+    </tbody></table>
+  </details>
+  {{ inventory_clipboard|json_script:"sov-inventory-clipboard" }}
+</div>
+<p class="small text-body-secondary">Online and Temporary upgrades only. Resource-producing upgrades and planning details are hidden.</p>
+<div class="table-responsive"><table class="table table-hover align-middle">
+  <thead><tr><th scope="col">System / owner</th><th scope="col">Upgrades</th></tr></thead>
+  {% for group in constellations %}<tbody data-constellation="{{ group.constellation.pk }}">
+    <tr class="sov-constellation table-active"><th colspan="2" scope="rowgroup"><div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-secondary" type="button" data-sov-collapse aria-expanded="true" aria-label="Toggle {{ group.constellation.name }}">▾</button>
+      <span>{{ group.constellation.name }}</span><span class="badge text-bg-secondary">{{ group.budgets|length }}</span>
+    </div></th></tr>
+    {% for b in group.budgets %}<tr id="system-{{ b.system.pk }}" class="sov-system-row">
+      <th scope="row"><div>{{ b.system }}</div><div class="small fw-normal text-body-secondary">Owner: {% if b.system.owner_observed_at %}{{ b.system.owner_name }}{% else %}Not captured yet{% endif %}</div></th>
+      <td>{% for u in b.upgrades %}<div class="sov-upgrade">{{ u.upgrade.item_type.name }} <span class="badge {% if u.status == 'online' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ u.get_status_display }}</span></div>{% empty %}<span class="small text-body-secondary">No visible upgrades.</span>{% endfor %}</td>
+    </tr>{% endfor %}
+  </tbody>{% empty %}<tbody><tr><td colspan="2">No systems.</td></tr></tbody>{% endfor %}
+</table></div>
+
+<p id="filter-empty" class="text-body-secondary" hidden>No systems match the filter.</p>

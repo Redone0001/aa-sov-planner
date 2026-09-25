@@ -173,7 +173,7 @@
     function showSelection() {
         sidebar.replaceChildren();
         const n = nodeMap().get(selected);
-        if (!n) { sidebar.append(element("p", "Select a system to inspect ownership, upgrades, workforce and connection candidates.")); return; }
+        if (!n) { sidebar.append(element("p", "Select a system to inspect ownership, upgrades and connection candidates.")); return; }
         sidebar.append(element("h2", n.name, "h5"));
         sidebar.append(element("div", n.constellation, "text-body-secondary"));
         sidebar.append(element("p", `Capital distance: ${distance(n.capital_distance)}${n.zone ? ` · Zone ${n.zone}` : ""}`, "my-2"));
@@ -181,12 +181,14 @@
         if (n.planned_id) {
             sidebar.append(element("div", `Owner: ${n.owner}`));
             if (n.owner_observed_at) sidebar.append(element("div", `Snapshot: ${new Date(n.owner_observed_at).toLocaleString()}`, "small text-body-secondary"));
-            sidebar.append(element("div", `Planned power: ${number(n.power.left)} left / ${number(n.power.initial)} initial`, n.power.left < 0 ? "text-danger" : ""));
-            sidebar.append(element("div", `Planned workforce: ${number(n.workforce.left)} left / ${number(n.workforce.initial)} initial`, n.workforce.left < 0 ? "text-danger" : ""));
-            sidebar.append(element("div", `Current power: ${number(n.power.current_left)} left`, n.power.current_left < 0 ? "text-danger" : ""));
-            sidebar.append(element("div", `Current workforce: ${number(n.workforce.current_left)} left`, n.workforce.current_left < 0 ? "text-danger" : ""));
-            sidebar.append(element("div", `${n.mode} · Import ${number(n.workforce.imported)} / Export ${number(n.workforce.exported)} / Transit ${number(n.workforce.transit)}`));
-            for (const warning of n.warnings) sidebar.append(element("div", `⚠ ${warning}`, "text-danger"));
+            if (n.power && n.workforce) {
+                sidebar.append(element("div", `Planned power: ${number(n.power.left)} left / ${number(n.power.initial)} initial`, n.power.left < 0 ? "text-danger" : ""));
+                sidebar.append(element("div", `Planned workforce: ${number(n.workforce.left)} left / ${number(n.workforce.initial)} initial`, n.workforce.left < 0 ? "text-danger" : ""));
+                sidebar.append(element("div", `Current power: ${number(n.power.current_left)} left`, n.power.current_left < 0 ? "text-danger" : ""));
+                sidebar.append(element("div", `Current workforce: ${number(n.workforce.current_left)} left`, n.workforce.current_left < 0 ? "text-danger" : ""));
+                sidebar.append(element("div", `${n.mode} · Import ${number(n.workforce.imported)} / Export ${number(n.workforce.exported)} / Transit ${number(n.workforce.transit)}`));
+            }
+            for (const warning of n.warnings || []) sidebar.append(element("div", `⚠ ${warning}`, "text-danger"));
             const actions = element("div", null, "d-flex flex-wrap gap-1 my-2");
             for (const [name,url] of Object.entries(n.actions)) editLink(name,url,actions);
             sidebar.append(actions, element("h3", "Upgrades", "h6 mt-2"));

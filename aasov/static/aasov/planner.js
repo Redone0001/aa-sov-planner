@@ -131,7 +131,7 @@
                         if (!document.execCommand("copy")) throw new Error("Copy unavailable");
                     } finally { field.remove(); copy.focus({preventScroll: true}); }
                 }
-                feedback("sov-feedback", `${scope === "planned" ? "Planned" : "All"} upgrades copied (item, tab, quantity).`);
+                feedback("sov-feedback", `${scope === "visible" ? "Visible" : scope === "planned" ? "Planned" : "All"} upgrades copied (item, tab, quantity).`);
             } catch {
                 feedback("sov-feedback", "Clipboard access failed. Expand the inventory list to select and copy its contents.", true);
             }

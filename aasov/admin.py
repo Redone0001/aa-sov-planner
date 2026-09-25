@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from .models import PlannedSystem, Project
+from .presentation import simplified_view
 from .sde import eligible_systems
 from .services import sync_project
 from .tasks import queue_ownership_snapshot
@@ -46,7 +47,13 @@ class ProjectAdmin(admin.ModelAdmin):
         (
             "Project access",
             {
-                "fields": ("restrict_access", "allow_editors", "allow_managers", "allow_admins"),
+                "fields": (
+                    "restrict_access",
+                    "allow_editors",
+                    "allow_managers",
+                    "allow_admins",
+                    "simplified_viewers",
+                ),
                 "description": "For restricted projects, matching any selected role grants visibility. Roles are based on permissions, not group names. Editing permissions remain separate. Superusers always retain access.",
             },
         ),
@@ -204,6 +211,12 @@ class PlannedSystemAdmin(admin.ModelAdmin):
             .get_queryset(request)
             .filter(project__in=Project.objects.visible_to(request.user))
         )
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if obj and simplified_view(obj.project, request.user):
+            return tuple(field for field in fields if field != "mode")
+        return fields
 
     def has_module_permission(self, request):
         return self.has_view_permission(request)

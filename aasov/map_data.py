@@ -61,21 +61,6 @@ def project_map(project, context, can_edit, can_manage):
             owner_observed_at=system.owner_observed_at.isoformat()
             if system.owner_observed_at
             else None,
-            mode=system.get_mode_display(),
-            warnings=b.warnings,
-            power={
-                "initial": b.initial_power,
-                "left": b.power_left,
-                "current_left": b.current.power_left,
-            },
-            workforce={
-                "initial": b.initial_workforce,
-                "left": b.workforce_left,
-                "current_left": b.current.workforce_left,
-                "imported": b.imported,
-                "exported": b.exported,
-                "transit": b.transiting,
-            },
             upgrades=[
                 {
                     "type_id": u.upgrade.item_type_id,
@@ -117,10 +102,29 @@ def project_map(project, context, can_edit, can_manage):
                 "Remove system": url("system_remove") if can_manage else None,
             },
         )
+        if not context.get("simplified_view"):
+            node.update(
+                mode=system.get_mode_display(),
+                warnings=b.warnings,
+                power={
+                    "initial": b.initial_power,
+                    "left": b.power_left,
+                    "current_left": b.current.power_left,
+                },
+                workforce={
+                    "initial": b.initial_workforce,
+                    "left": b.workforce_left,
+                    "current_left": b.current.workforce_left,
+                    "imported": b.imported,
+                    "exported": b.exported,
+                    "transit": b.transiting,
+                },
+            )
         nodes.append(node)
     graph = sde.gate_graph([node["id"] for node in nodes])
     return {
         "nodes": nodes,
+        "simplified_view": bool(context.get("simplified_view")),
         "capital": capital.pk if capital else None,
         "capital_name": capital.name if capital else None,
         "gates": sorted(
