@@ -69,7 +69,7 @@ CELERYBEAT_SCHEDULE["EVE SDE :: Check for SDE Updates"] = {
 }
 ```
 
-Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project` and `aasov.edit_plan`. For **Plan Managers**, create an AA group with `aasov.view_project`, `aasov.edit_plan` and `aasov.manage_plan` (displayed as “Plan Manager: can remove systems from plans”). The management permission adds system removal, CSV imports and capital selection; staff/superuser status is not needed. Staff creating projects also need normal Project add/change permissions; these do not automatically grant planner edit access. AA's usual login/main-character requirements apply. Permissions are global to the module: authorized readers can see every project.
+Grant `aasov.view_project` to readers. Editors need **both** `aasov.view_project` and `aasov.edit_plan`. For **Plan Managers**, create an AA group with `aasov.view_project`, `aasov.edit_plan` and `aasov.manage_plan` (displayed as “Plan Manager: can remove systems from plans”). The management permission adds system removal, CSV imports and capital selection; staff/superuser status is not needed. Staff creating projects also need normal Project add/change permissions; these do not automatically grant planner edit access. AA's usual login/main-character requirements apply. Action permissions apply across the module; each project can additionally restrict visibility to selected roles. The left-menu entry still requires `aasov.view_project`.
 
 ## Use
 
@@ -97,6 +97,19 @@ python manage.py collectstatic --noinput
 ```
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
+
+## Project visibility (0.7.0)
+
+In Django administration, open a project and use **Project access**:
+
+- Leave **Restrict project access** unchecked to allow all viewers (the default for existing and new projects).
+- Check it and select any combination of **Editors**, **Plan Managers** and **Administrators**. At least one role must be selected. Matching any selected role grants access.
+
+Roles follow permissions, not group names: Editors have `aasov.edit_plan`, Plan Managers have `aasov.manage_plan`, and Administrators are staff with `aasov.change_project`. A user with multiple roles can match any of them. Active superusers always retain access. `aasov.view_project` is still required to use the planner, and editing/management actions still require their normal permissions. Visibility does not grant additional powers.
+
+Restricted projects are hidden from the project list and selector. Direct project URLs, map endpoints, previews, CSV operations and edits all enforce visibility and return 404 for inaccessible projects. Django administration also filters project and ownership-system lists, details and bulk actions. Changing access blocks subsequent requests from an already-open page; previously displayed information cannot be recalled from a browser.
+
+Update in your AA virtual environment, run `python manage.py migrate` (migration 0006), run `python manage.py collectstatic --noinput`, and restart AA services. Existing projects remain visible to all viewers until restricted by an administrator.
 
 ## Quick upgrade and route actions (0.6.2)
 

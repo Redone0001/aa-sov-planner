@@ -34,14 +34,22 @@ class ProjectAdminForm(forms.ModelForm):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     form = ProjectAdminForm
-    list_display = ("name", "updated_at", "ownership_summary")
+    list_display = ("name", "updated_at", "visibility_summary", "ownership_summary")
     actions = ("capture_missing_ownership",)
     search_fields = ("name",)
     filter_horizontal = ("regions", "selected_systems", "excluded_systems")
     readonly_fields = ("updated_at", "ownership_snapshots")
+    list_filter = ("restrict_access",)
     fieldsets = (
         ("Ownership snapshots", {"fields": ("ownership_snapshots",)}),
         (None, {"fields": ("name", "description", "capital", "updated_at")}),
+        (
+            "Project access",
+            {
+                "fields": ("restrict_access", "allow_editors", "allow_managers", "allow_admins"),
+                "description": "For restricted projects, matching any selected role grants visibility. Roles are based on permissions, not group names. Editing permissions remain separate. Superusers always retain access.",
+            },
+        ),
         (
             "Add systems to this project",
             {
@@ -59,6 +67,7 @@ class ProjectAdmin(admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
+            .visible_to(request.user)
             .annotate(
                 _system_count=Count("systems"),
                 _snapshot_count=Count(
@@ -188,6 +197,13 @@ class PlannedSystemAdmin(admin.ModelAdmin):
     @admin.display(description="Last error")
     def last_error(self, obj):
         return obj.owner_error[:160]
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .filter(project__in=Project.objects.visible_to(request.user))
+        )
 
     def has_module_permission(self, request):
         return self.has_view_permission(request)

@@ -86,3 +86,7 @@ Browser checks verified Compact spacing and None Ansiblex range on first load, n
 ## Quick actions (0.6.2)
 
 Flatly, Darkly and Materia browser checks verified Offline in the list, Offline and Delete for map upgrades, and Remove route in the map sidebar. Checks confirmed persisted status/deletions, refreshed resource totals and route arrows, preserved selected system and zoom, zero document navigations, and no JavaScript errors. Fixtures used synthetic systems, upgrades and routes.
+
+## Project access (0.7.0)
+
+Browser checks in Django administration verified required-role validation, saving multiple allowed roles, persisted checkboxes, and restoring unrestricted access. A separate synthetic viewer session lost both project-list visibility and direct URL access after restriction; the superuser retained access. Automated tests cover role combinations, all project read/preview/mutation endpoints, admin lists/details/bulk actions, and subsequent requests after visibility changes.

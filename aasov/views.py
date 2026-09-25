@@ -24,18 +24,20 @@ from .services import (
 @login_required
 @permission_required("aasov.view_project", raise_exception=True)
 def index(request):
-    return render(request, "aasov/index.html", {"projects": Project.objects.all()})
+    return render(
+        request, "aasov/index.html", {"projects": Project.objects.visible_to(request.user)}
+    )
 
 
 @login_required
 @permission_required("aasov.view_project", raise_exception=True)
 def project(request, project_id):
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     context = calculate_project(plan)
     context.update(
         {
             "project": plan,
-            "projects": Project.objects.all(),
+            "projects": Project.objects.visible_to(request.user),
             "can_edit": request.user.has_perm("aasov.edit_plan"),
             "can_manage": request.user.has_perm("aasov.manage_plan"),
         }
@@ -59,7 +61,7 @@ def balance_workforce(request, project_id):
     class BalanceForm(forms.Form):
         proposal = forms.CharField(widget=forms.HiddenInput)
 
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     salt = f"aasov.workforce.{request.user.pk}"
     form = BalanceForm(request.POST if request.method == "POST" else None)
     preview = None
@@ -100,7 +102,10 @@ def balance_workforce(request, project_id):
 def map_data(request, project_id):
     from .map_data import project_map
 
-    plan = get_object_or_404(Project.objects.select_related("capital__solar_system"), pk=project_id)
+    plan = get_object_or_404(
+        Project.objects.visible_to(request.user).select_related("capital__solar_system"),
+        pk=project_id,
+    )
     return JsonResponse(
         project_map(
             plan,
@@ -118,7 +123,10 @@ def map_range(request, project_id, solar_id):
     from .map_data import nearby_systems
     from .sde import eligible_systems
 
-    plan = get_object_or_404(Project.objects.select_related("capital__solar_system"), pk=project_id)
+    plan = get_object_or_404(
+        Project.objects.visible_to(request.user).select_related("capital__solar_system"),
+        pk=project_id,
+    )
     source = get_object_or_404(eligible_systems(), pk=solar_id)
     return JsonResponse(nearby_systems(plan, source))
 
@@ -130,7 +138,9 @@ def capital(request, project_id):
     from .forms import CapitalForm
 
     with transaction.atomic():
-        plan = get_object_or_404(Project.objects.select_for_update(), pk=project_id)
+        plan = get_object_or_404(
+            Project.objects.visible_to(request.user).select_for_update(), pk=project_id
+        )
         form = CapitalForm(request.POST or None, instance=plan)
         if request.method == "POST" and form.is_valid():
             form.save()
@@ -178,7 +188,7 @@ def validation_error(form, error):
 @login_required
 @permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
 def system_mode(request, project_id, system_id):
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     system = get_object_or_404(PlannedSystem, pk=system_id, project=plan)
     form = ModeForm(request.POST or None, instance=system)
     if request.method == "POST" and form.is_valid():
@@ -194,7 +204,7 @@ def system_mode(request, project_id, system_id):
 @login_required
 @permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
 def upgrade(request, project_id, system_id, upgrade_id=None):
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     system = get_object_or_404(PlannedSystem, pk=system_id, project=plan)
     item = (
         get_object_or_404(PlannedUpgrade, pk=upgrade_id, system=system)
@@ -227,7 +237,7 @@ def upgrade(request, project_id, system_id, upgrade_id=None):
 @login_required
 @permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
 def route(request, project_id, route_id=None):
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     item = (
         get_object_or_404(WorkforceRoute, pk=route_id, source__project=plan) if route_id else None
     )
@@ -281,7 +291,7 @@ def route(request, project_id, route_id=None):
 def remove(request, project_id, kind, item_id):
     if kind not in ("upgrade", "route"):
         raise Http404
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     try:
         remove_item(project_id, kind, item_id)
     except ObjectDoesNotExist as error:
@@ -293,7 +303,7 @@ def remove(request, project_id, kind, item_id):
 @permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
 @require_GET
 def route_preview(request, project_id):
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     try:
         source = int(request.GET.get("source", ""))
         destination = int(request.GET.get("destination", ""))
@@ -326,7 +336,7 @@ def route_preview(request, project_id):
 def system_remove(request, project_id, system_id):
     from django import forms
 
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     system = get_object_or_404(PlannedSystem, project=plan, pk=system_id)
     if request.method == "POST":
         try:
@@ -357,7 +367,7 @@ def best_ratting(request, project_id, constellation_id):
     class ProposalForm(forms.Form):
         proposal = forms.CharField(widget=forms.HiddenInput)
 
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     if not plan.systems.filter(solar_system__constellation_id=constellation_id).exists():
         raise Http404
     salt = f"aasov.ratting.{request.user.pk}"
@@ -407,7 +417,7 @@ def best_ratting(request, project_id, constellation_id):
 def upgrade_installed(request, project_id, system_id, upgrade_id):
     from .services import install_upgrade
 
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     try:
         install_upgrade(plan.pk, system_id, upgrade_id)
     except ObjectDoesNotExist as error:
@@ -426,7 +436,7 @@ def upgrade_installed(request, project_id, system_id, upgrade_id):
 def csv_template(request, project_id):
     from django.http import HttpResponse
 
-    get_object_or_404(Project, pk=project_id)
+    get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     response = HttpResponse(
         "\ufeffsystem,upgrade\r\nYOUR-SYSTEM,Major Threat Detection Array III\r\n",
         content_type="text/csv; charset=utf-8",
@@ -444,7 +454,7 @@ def csv_upload(request, project_id):
     from .csv_import import apply_import, parse_import
     from .forms import CSVConfirmForm, CSVUploadForm
 
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     salt = f"aasov.csv.{request.user.pk}"
     preview = None
     if request.method == "POST" and "import_preview" in request.POST:
@@ -512,7 +522,7 @@ def csv_upload(request, project_id):
 def upgrade_offline(request, project_id, system_id, upgrade_id):
     from .services import offline_upgrade
 
-    plan = get_object_or_404(Project, pk=project_id)
+    plan = get_object_or_404(Project.objects.visible_to(request.user), pk=project_id)
     try:
         offline_upgrade(plan.pk, system_id, upgrade_id)
     except ObjectDoesNotExist as error:

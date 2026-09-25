@@ -2,8 +2,41 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 
+class ProjectQuerySet(models.QuerySet):
+    def visible_to(self, user):
+        if not user.is_authenticated or not user.is_active:
+            return self.none()
+        if user.is_superuser:
+            return self
+        administrator = user.is_staff and user.has_perm("aasov.change_project")
+        if not user.has_perm("aasov.view_project") and not administrator:
+            return self.none()
+        allowed = models.Q(restrict_access=False)
+        if user.has_perm("aasov.edit_plan"):
+            allowed |= models.Q(allow_editors=True)
+        if user.has_perm("aasov.manage_plan"):
+            allowed |= models.Q(allow_managers=True)
+        if administrator:
+            allowed |= models.Q(allow_admins=True)
+        return self.filter(allowed)
+
+
 class Project(models.Model):
+    objects = ProjectQuerySet.as_manager()
+
     name = models.CharField(max_length=150, unique=True)
+    restrict_access = models.BooleanField(
+        default=False,
+        verbose_name="Restrict project access",
+        help_text="Unchecked: all viewers can access this project. Checked: only selected roles below (and superusers).",
+    )
+    allow_editors = models.BooleanField(default=False, verbose_name="Editors")
+    allow_managers = models.BooleanField(default=False, verbose_name="Plan Managers")
+    allow_admins = models.BooleanField(
+        default=False,
+        verbose_name="Administrators",
+        help_text="Staff users with Can change project. Staff status alone is insufficient.",
+    )
     description = models.TextField(blank=True)
     capital = models.ForeignKey(
         "PlannedSystem", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -25,8 +58,31 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def visibility_summary(self):
+        if not self.restrict_access:
+            return "All viewers"
+        return (
+            ", ".join(
+                name
+                for enabled, name in (
+                    (self.allow_editors, "Editors"),
+                    (self.allow_managers, "Plan Managers"),
+                    (self.allow_admins, "Administrators"),
+                )
+                if enabled
+            )
+            or "Superusers only"
+        )
+
     def clean(self):
         super().clean()
+        if self.restrict_access and not any(
+            (self.allow_editors, self.allow_managers, self.allow_admins)
+        ):
+            raise ValidationError(
+                {"restrict_access": "Select at least one role for a restricted project."}
+            )
         if self.capital_id and self.capital.project_id != self.pk:
             raise ValidationError({"capital": "Choose a capital from this plan."})
 
