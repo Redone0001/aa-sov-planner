@@ -82,3 +82,7 @@ Flatly, Darkly and Materia browser checks on AA 5.3.1 verified saving Temporary 
 ## Map defaults (0.6.1)
 
 Browser checks verified Compact spacing and None Ansiblex range on first load, no range requests while None is selected, working system selection/edit links, re-enabling range candidates, and discarding a delayed range response after switching back to None. No JavaScript errors occurred.
+
+## Quick actions (0.6.2)
+
+Flatly, Darkly and Materia browser checks verified Offline in the list, Offline and Delete for map upgrades, and Remove route in the map sidebar. Checks confirmed persisted status/deletions, refreshed resource totals and route arrows, preserved selected system and zoom, zero document navigations, and no JavaScript errors. Fixtures used synthetic systems, upgrades and routes.

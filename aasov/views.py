@@ -504,3 +504,17 @@ def csv_upload(request, project_id):
         submit_label="Import as Planned" if ready else "Preview CSV",
         hide_budget_note=True,
     )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_POST
+def upgrade_offline(request, project_id, system_id, upgrade_id):
+    from .services import offline_upgrade
+
+    plan = get_object_or_404(Project, pk=project_id)
+    try:
+        offline_upgrade(plan.pk, system_id, upgrade_id)
+    except ObjectDoesNotExist as error:
+        raise Http404 from error
+    return saved(request, plan, "Upgrade set to Offline. Budgets updated.")

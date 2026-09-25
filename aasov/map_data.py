@@ -82,6 +82,12 @@ def project_map(project, context, can_edit, can_manage):
                     "name": u.upgrade.item_type.name,
                     "status": u.status,
                     "edit": url("upgrade_edit", u.pk) if can_edit else None,
+                    "offline": url("upgrade_offline", u.pk)
+                    if can_edit and u.status != "offline"
+                    else None,
+                    "remove": reverse("aasov:remove", args=[project.pk, "upgrade", u.pk])
+                    if can_edit
+                    else None,
                     "install": url("upgrade_installed", u.pk)
                     if can_edit and u.status == "planned"
                     else None,
@@ -127,6 +133,9 @@ def project_map(project, context, can_edit, can_manage):
                 "amount": r["route"].amount,
                 "valid": r["valid"],
                 "path": [system.solar_system_id for system in r["path"]],
+                "remove": reverse("aasov:remove", args=[project.pk, "route", r["route"].pk])
+                if can_edit
+                else None,
                 "edit": reverse("aasov:route_edit", args=[project.pk, r["route"].pk])
                 if can_edit
                 else None,

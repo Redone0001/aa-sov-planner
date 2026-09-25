@@ -159,6 +159,17 @@
         setView();
         if (focused) canvas.querySelector(`[data-map-node="${focused}"]`)?.focus({preventScroll:true});
     }
+    function actionButton(label, url, parent, style, description) {
+        if (!url) return;
+        const csrf = document.querySelector("#sov-board input[name=csrfmiddlewaretoken]");
+        if (!csrf) return;
+        const form = element("form", null, "d-inline ms-1");
+        form.method="post"; form.action=url; form.dataset.sovAction="";
+        form.append(csrf.cloneNode());
+        const button = element("button", label, `btn btn-sm btn-outline-${style}`);
+        button.type="submit"; button.setAttribute("aria-label", description); button.title=description;
+        form.append(button); parent.append(form);
+    }
     function showSelection() {
         sidebar.replaceChildren();
         const n = nodeMap().get(selected);
@@ -182,19 +193,18 @@
             for (const u of n.upgrades) {
                 const row = element("div", null, "border-top py-1");
                 row.append(element("div", `${u.name} · ${u.status}`)); editLink("Edit", u.edit, row);
-                if (u.install) {
-                    const form = element("form", null, "d-inline ms-1"); form.method="post"; form.action=u.install; form.dataset.sovAction="";
-                    const csrf = document.querySelector("#sov-board input[name=csrfmiddlewaretoken]");
-                    if (csrf) form.append(csrf.cloneNode());
-                    const button = element("button", "✓ Installed", "btn btn-sm btn-outline-success"); button.type="submit"; form.append(button); row.append(form);
-                }
+                actionButton("✓ Installed", u.install, row, "success", `Mark ${u.name} installed`);
+                actionButton("Offline", u.offline, row, "secondary", `Set ${u.name} Offline`);
+                actionButton("Delete", u.remove, row, "danger", `Delete ${u.name} from this plan`);
                 sidebar.append(row);
             }
             if (!n.upgrades.length) sidebar.append(element("p", "No upgrades attached.", "text-body-secondary"));
             for (const r of data.routes.filter(r => r.path.includes(n.id) || r.source===n.id || r.destination===n.id)) {
                 const row = element("div", null, "border-top py-1");
                 row.append(element("div", `${nodeMap().get(r.source)?.name} → ${nodeMap().get(r.destination)?.name}: ${number(r.amount)} workforce${r.valid ? "" : " · Invalid route"}`));
-                editLink("Edit route",r.edit,row); sidebar.append(row);
+                editLink("Edit route",r.edit,row);
+                actionButton("Remove route", r.remove, row, "danger", `Remove route ${nodeMap().get(r.source)?.name} to ${nodeMap().get(r.destination)?.name}`);
+                sidebar.append(row);
             }
         } else sidebar.append(element("p", "Outside this plan. Ownership, upgrades and editing are available only for systems added to the plan.", "text-body-secondary"));
         if (rangeFilter.value === "none") return;

@@ -98,6 +98,10 @@ python manage.py collectstatic --noinput
 
 Restart AA web services and Celery workers, then run `python manage.py aasov_snapshot_owners` to populate missing ownership snapshots on existing plans. Grant the new `aasov.manage_plan` permission to the intended Plan Manager group. Refresh the browser to load the updated JavaScript and layout.
 
+## Quick upgrade and route actions (0.6.2)
+
+Editors can click **Offline** beside any Planned, Online or Temporary upgrade in the list or selected-system map sidebar. The upgrade stays registered but stops counting in both budgets. The map sidebar also offers **Delete** for upgrades and **Remove route** for workforce routes, including routes passing through the selected transit system. Actions immediately update budgets, inventory and map without a page reload; map selection and zoom are preserved. No database migration is required for this update.
+
 ## Temporary upgrades and two budgets (0.6.0)
 
 Choose **Temporary** for an upgrade installed and online now that will be replaced in the intended plan. Each system shows two power/workforce balances and progress bars:

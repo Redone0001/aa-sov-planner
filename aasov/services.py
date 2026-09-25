@@ -412,3 +412,15 @@ def install_upgrade(project_id, system_id, upgrade_id):
         planned.status = PlannedUpgrade.Status.ONLINE
         planned.save(update_fields=["status"])
         touch(project)
+
+
+@transaction.atomic
+def offline_upgrade(project_id, system_id, upgrade_id):
+    project = Project.objects.select_for_update().get(pk=project_id)
+    upgrade = PlannedUpgrade.objects.get(
+        pk=upgrade_id, system_id=system_id, system__project=project
+    )
+    if upgrade.status != PlannedUpgrade.Status.OFFLINE:
+        upgrade.status = PlannedUpgrade.Status.OFFLINE
+        upgrade.save(update_fields=["status"])
+        touch(project)
