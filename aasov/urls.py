@@ -4,6 +4,12 @@ from . import views
 
 app_name = "aasov"
 urlpatterns = [
+    path("<int:project_id>/logistics/add/", views.logistics_link, name="logistics_link"),
+    path(
+        "<int:project_id>/logistics/<int:link_id>/remove/",
+        views.logistics_remove,
+        name="logistics_remove",
+    ),
     path("<int:project_id>/csv/export/", views.csv_export, name="csv_export"),
     path("<int:project_id>/routes/csv/export/", views.route_csv_export, name="route_csv_export"),
     path(

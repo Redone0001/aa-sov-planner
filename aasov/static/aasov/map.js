@@ -15,6 +15,7 @@
     let rangeSequence = 0, loadSequence = 0, dirty = true, drag = null, moved = false;
     let origin = [0, 0], unit = 1, projected = false, view = [0, 0, 1000, 650];
     const layers = () => Object.fromEntries([...panel.querySelectorAll("[data-map-layer]")].map(el => [el.dataset.mapLayer, el.checked]));
+    const explorationJumps = n => n.exploration_jumps;
     const nodeMap = () => new Map([...candidates, ...(data?.nodes || [])].map(n => [n.id, n]));
     const rangeFilter = document.getElementById("sov-map-range-filter");
     function rangeCandidates() {
@@ -85,6 +86,8 @@
             const label = element("span", `Zone ${zone}: ${ranges[zone-1]} LY`), swatch = element("span", null, "sov-map-swatch");
             label.dataset.zone = zone; swatch.style.backgroundColor = color; label.prepend(swatch); legend.append(label);
         }
+        if (enabled.exploration) legend.append(element("span", "● Green: exploration bonus within 5 jumps (including source)", "text-success"));
+        if (enabled.logistics) legend.append(element("span", "Purple line: saved logistics link; dashed red: invalid"));
         if (!data.capital) legend.append(element("span", "Set a plan capital to display distance zones.", "text-body-secondary"));
         if (data.capital && !colors.size) legend.append(element("span", "No capital-distance data available. Reload geographic coordinates in the SDE.", "text-warning"));
         const defs = svg("defs");
@@ -106,6 +109,10 @@
             const edge = line(selected,candidate.id,"sov-map-ansiblex");
             if (edge) svg("title",{},edge).textContent = `Possible connection: ${distance(candidate.source_distance)} (range only)`;
         }
+        if (enabled.logistics) for (const link of data.logistics_links || []) {
+            const edge = line(link.source, link.destination, `sov-map-logistics${link.valid ? "" : " invalid"}`);
+            if (edge) svg("title", {}, edge).textContent = `Advanced Logistics link${link.valid ? "" : " (invalid: check upgrades and range)"}`;
+        }
         if (enabled.routes) for (const route of data.routes) {
             const path = route.valid ? route.path : [route.source, route.destination];
             const group = svg("g");
@@ -118,18 +125,21 @@
         for (const n of visible) {
             const [x,y] = point(n), active = n.id === selected, reachable = nearby.has(n.id);
             const group = svg("g", {transform:`translate(${x} ${y})`, role:"button", tabindex:0, "aria-label":`${n.name}${n.warnings?.length ? ", resource warnings" : ""}${reachable ? ", within 5 LY" : ""}`, "data-map-node":n.id});
-            if (selected && !active && !reachable) group.setAttribute("opacity", ".42");
+            if (selected && !active && !reachable && !(enabled.exploration && explorationJumps(n) != null)) group.setAttribute("opacity", ".42");
             const width = nodeWidth(n);
             const box = pad => ({x:-width/2-pad, y:-17-pad, width:width+2*pad, height:34+2*pad, rx:6+pad});
             if (reachable) svg("rect", {...box(5),class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
             if (active) svg("rect", {...box(9),fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
-            const fill = colors.get(n.zone)||"rgb(100, 110, 120)";
+            const covered = enabled.exploration && explorationJumps(n) != null;
+            const fill = covered ? "rgb(32, 125, 68)" : colors.get(n.zone)||"rgb(100, 110, 120)";
+            if (covered) group.setAttribute("data-exploration-jumps", explorationJumps(n));
             svg("rect", {...box(0), class:"sov-map-system-shape", fill, stroke:enabled.warnings && n.warnings?.length ? "var(--bs-danger)" : "var(--bs-body-color)", "stroke-width":enabled.warnings && n.warnings?.length ? 3 : 1, "stroke-dasharray":n.planned_id ? "none" : "2 2"}, group);
             const rgb = fill.match(/\d+/g).map(Number);
             const foreground = rgb[0]*.299 + rgb[1]*.587 + rgb[2]*.114 > 150 ? "#172335" : "#ffffff";
             svg("text", {x:0,y:1,"text-anchor":"middle","dominant-baseline":"middle","font-size":12,"font-family":"Arial","font-weight":600,class:"sov-map-system-name",style:`fill:${foreground};stroke:none;`},group).textContent=nodeTitle(n);
             const title = svg("title", {}, group);
             title.textContent = `${n.name}\n${n.constellation}\nOwner: ${n.owner||"Outside plan; not captured"}\nCapital: ${distance(n.capital_distance)}${n.zone ? ` (Zone ${n.zone})` : ""}\n${n.warnings?.join("\n")||""}`;
+            if (covered) title.textContent += `\nExploration bonus: ${explorationJumps(n)} jumps from nearest detector`;
             let labelY = 4;
             function label(text, extra = {}) { const el = svg("text", {x:35,y:labelY,"font-size":12,...extra},group); el.textContent = text; labelY+=16; }
             if (enabled.owners) label(n.owner||"Owner not captured", {x:0,y:-33,"text-anchor":"middle","font-size":10});
@@ -180,6 +190,14 @@
         if (!n.position) sidebar.append(element("p", "Missing 2D coordinates. Reload the SDE to place this system on the map.", "text-warning"));
         if (n.planned_id) {
             sidebar.append(element("div", `Owner: ${n.owner}`));
+            if (layers().exploration) sidebar.append(element("p", explorationJumps(n) == null ? "No exploration coverage within 5 jumps." : `Exploration bonus · ${explorationJumps(n)} jumps from nearest detector${n.exploration ? " · Detector here" : ""}`, explorationJumps(n) == null ? "text-body-secondary" : "text-success"));
+            for (const link of (data.logistics_links || []).filter(l => l.source === n.id || l.destination === n.id)) {
+                const other = nodeMap().get(link.source === n.id ? link.destination : link.source);
+                const row = element("div", null, "border-top py-1");
+                row.append(element("span", `Logistics link: ${other?.name || "Unknown"}${link.valid ? "" : " · Invalid (check upgrades and range)"}`));
+                actionButton("Remove link", link.remove, row, "danger", `Remove logistics link to ${other?.name}`);
+                sidebar.append(row);
+            }
             if (n.owner_observed_at) sidebar.append(element("div", `Snapshot: ${new Date(n.owner_observed_at).toLocaleString()}`, "small text-body-secondary"));
             if (n.power && n.workforce) {
                 sidebar.append(element("div", `Planned power: ${number(n.power.left)} left / ${number(n.power.initial)} initial`, n.power.left < 0 ? "text-danger" : ""));
@@ -285,7 +303,7 @@
         else { draw(); showSelection(); }
     });
     spacing.addEventListener("change", () => { fit(); draw(); });
-    panel.addEventListener("change", event => { if (event.target.matches("[data-map-layer]")) draw(); });
+    panel.addEventListener("change", event => { if (event.target.matches("[data-map-layer]")) { draw(); showSelection(); } });
     panel.addEventListener("click", event => {
         const node=event.target.closest("[data-map-node], [data-map-select]");
         if (node && !moved) select(Number(node.dataset.mapNode||node.dataset.mapSelect));

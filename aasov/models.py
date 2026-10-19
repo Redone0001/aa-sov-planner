@@ -197,3 +197,50 @@ class WorkforceRoute(models.Model):
         nodes, graph = project_graph(self.source.project_id)
         if find_route(self.source_id, self.destination_id, nodes, graph) is None:
             raise ValidationError("No stargate path exists through the project's Transit systems.")
+
+
+class LogisticsLink(models.Model):
+    """Undirected, canonical endpoint pair; retained if infrastructure is offlined."""
+
+    source = models.ForeignKey(
+        PlannedSystem, on_delete=models.CASCADE, related_name="logistics_out"
+    )
+    destination = models.ForeignKey(
+        PlannedSystem, on_delete=models.CASCADE, related_name="logistics_in"
+    )
+
+    class Meta:
+        default_permissions = ()
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(source__lt=models.F("destination")), name="aasov_logistics_order"
+            ),
+            models.UniqueConstraint(
+                fields=("source", "destination"), name="aasov_logistics_unique"
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if not self.source_id or not self.destination_id:
+            return
+        from .exploration import is_logistics
+        from .map_data import distance
+
+        if self.source_id == self.destination_id:
+            raise ValidationError("Choose two different systems.")
+        if self.source.project_id != self.destination.project_id:
+            raise ValidationError("Both systems must belong to the same project.")
+        for system in (self.source, self.destination):
+            if not any(
+                is_logistics(u.upgrade)
+                for u in system.upgrades.filter(status__in=("planned", "online")).select_related(
+                    "upgrade__item_type"
+                )
+            ):
+                raise ValidationError(
+                    "Both systems need Planned or Online Advanced Logistics Network."
+                )
+        ly = distance(self.source.solar_system, self.destination.solar_system)
+        if ly is None or ly > 5:
+            raise ValidationError("Systems must have geographic coordinates and be within 5 LY.")

@@ -2,6 +2,8 @@
 
 Plan sovereignty upgrades, power and workforce across EVE Online systems inside **Alliance Auth 5.x**. Create projects from regions or individual systems, compare the current setup with the intended plan, and manage workforce routes on a list or interactive map.
 
+**Development version: 1.1.0** (includes migration `0008_logisticslink`; update from `master`, run `migrate` and `collectstatic`, then restart AA).
+
 **Current release: [1.0.0](https://github.com/Redone0001/aa-sov-planner/releases/tag/v1.0.0)** · [Theme verification](docs/theme-validation.md) · [MIT license](LICENSE)
 
 ## Features
@@ -12,6 +14,8 @@ Plan sovereignty upgrades, power and workforce across EVE Online systems inside 
 - **Workforce routing:** explicit source, destination and amount, with stargate paths through Transit systems. One destination per exporter; up to three sources per importer. Power and upgrade-generated workforce stay local.
 - **Workforce balancing:** preview transfers from adjacent stargate neighbours to cover deficits while protecting both resource setups, existing routes and occupied transit systems.
 - **Best ratting:** optimise a constellation's Major/Minor Threat upgrades and workforce routes. Higher tiers take priority; Major wins at equal tiers. Preserve Temporary and non-ratting upgrades and validate both resource setups before applying.
+- **Exploration overlay:** green coverage within five stargate jumps of Planned, Online or Temporary Exploration Detectors. Uses the complete SDE gate network, including paths outside the plan, and respects restricted viewer visibility. Logistics links never extend this coverage.
+- **Saved logistics links:** editors can connect two systems with Planned or Online Advanced Logistics Network, within 5 LY. Purple links appear on the map; links become invalid if their infrastructure is offlined or removed. Remove links from either endpoint’s sidebar.
 - **Interactive map:** EVE SDE schematic layout with system names, ownership, upgrade icons, resource warnings and workforce arrows. Click systems to edit upgrades or remove routes. Pan, zoom and selection persist through edits.
 - **Ansiblex planning:** highlight systems within 5 LY and colour distance zones from a saved project capital. Filter for Advanced Logistics present or online (including Temporary). Map spacing defaults to Compact; Ansiblex range defaults to None.
 - **Ownership snapshots:** capture system ownership from public ESI when systems are added. Inspect capture status, timestamps and errors in admin, and retry missing snapshots.

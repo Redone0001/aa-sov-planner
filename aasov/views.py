@@ -652,3 +652,51 @@ def route_csv_upload(request, project_id):
         submit_label="Apply route import" if preview else "Preview CSV",
         hide_budget_note=True,
     )
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def logistics_link(request, project_id):
+    from .forms import LogisticsLinkForm
+    from .models import LogisticsLink
+    from .services import touch
+
+    with transaction.atomic():
+        plan = get_object_or_404(
+            Project.objects.visible_to(request.user).select_for_update(), pk=project_id
+        )
+        form = LogisticsLinkForm(
+            request.POST if request.method == "POST" else None,
+            project=plan,
+            initial={"source": request.GET.get("source")},
+        )
+        if request.method == "POST" and form.is_valid():
+            a, b = sorted(
+                (form.cleaned_data["source"], form.cleaned_data["destination"]), key=lambda s: s.pk
+            )
+            link = LogisticsLink(source=a, destination=b)
+            try:
+                link.full_clean()
+                link.save()
+                touch(plan)
+                return saved(request, plan, "Advanced Logistics link added.")
+            except ValidationError as error:
+                validation_error(form, error)
+    return form_page(request, plan, form, "Link Advanced Logistics systems", hide_budget_note=True)
+
+
+@login_required
+@permission_required(("aasov.view_project", "aasov.edit_plan"), raise_exception=True)
+@require_POST
+def logistics_remove(request, project_id, link_id):
+    from .models import LogisticsLink
+    from .services import touch
+
+    with transaction.atomic():
+        plan = get_object_or_404(
+            Project.objects.visible_to(request.user).select_for_update(), pk=project_id
+        )
+        get_object_or_404(LogisticsLink, source__project=plan, pk=link_id).delete()
+        touch(plan)
+    return saved(request, plan, "Advanced Logistics link removed.")

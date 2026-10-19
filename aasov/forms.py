@@ -143,3 +143,28 @@ class RouteCSVUploadForm(forms.Form):
 
 class RouteCSVConfirmForm(forms.Form):
     route_preview = forms.CharField(widget=forms.HiddenInput)
+
+
+class LogisticsLinkForm(forms.Form):
+    source = forms.ModelChoiceField(queryset=PlannedSystem.objects.none())
+    destination = forms.ModelChoiceField(queryset=PlannedSystem.objects.none())
+
+    def __init__(self, *args, project, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .exploration import is_logistics
+
+        ids = [
+            u.system_id
+            for u in PlannedUpgrade.objects.filter(
+                system__project=project, status__in=("planned", "online")
+            ).select_related("upgrade__item_type")
+            if is_logistics(u.upgrade)
+        ]
+        for field in self.fields.values():
+            field.queryset = project.systems.filter(pk__in=ids).select_related("solar_system")
+            field.widget.attrs["class"] = "form-select"
+        self.fields[
+            "destination"
+        ].help_text = (
+            "Both endpoints require Planned or Online Advanced Logistics and must be within 5 LY."
+        )

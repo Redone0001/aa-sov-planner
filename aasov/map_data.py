@@ -5,6 +5,8 @@ import math
 from django.urls import reverse
 
 from . import sde
+from .exploration import coverage, is_exploration
+from .models import LogisticsLink
 
 LIGHT_YEAR = 9_460_000_000_000_000
 
@@ -79,6 +81,10 @@ def project_map(project, context, can_edit, can_manage):
                 }
                 for u in b.upgrades
             ],
+            exploration=any(
+                is_exploration(u.upgrade) and u.status in ("planned", "online", "temporary")
+                for u in b.upgrades
+            ),
             logistics=next(
                 (
                     u.status
@@ -89,6 +95,10 @@ def project_map(project, context, can_edit, can_manage):
                 None,
             ),
             actions={
+                "Link Advanced Logistics": reverse("aasov:logistics_link", args=[project.pk])
+                + f"?source={system.pk}"
+                if can_edit
+                else None,
                 "Add upgrade": url("upgrade_add") if can_edit else None,
                 "Workforce mode": url("mode") if can_edit else None,
                 "Import workforce": reverse("aasov:route_add", args=[project.pk])
@@ -121,9 +131,34 @@ def project_map(project, context, can_edit, can_manage):
                 },
             )
         nodes.append(node)
+    by_id = {node["id"]: node for node in nodes}
+    links = []
+    for link in LogisticsLink.objects.filter(source__project=project).select_related(
+        "source__solar_system", "destination__solar_system"
+    ):
+        a, b = link.source.solar_system_id, link.destination.solar_system_id
+        eligible = all(by_id.get(pk, {}).get("logistics") in ("planned", "online") for pk in (a, b))
+        if context.get("simplified_view") and not eligible:
+            continue
+        ly = distance(link.source.solar_system, link.destination.solar_system)
+        links.append(
+            {
+                "source": a,
+                "destination": b,
+                "valid": eligible and ly is not None and ly <= 5,
+                "remove": reverse("aasov:logistics_remove", args=[project.pk, link.pk])
+                if can_edit
+                else None,
+            }
+        )
+    sources = [node["id"] for node in nodes if node["exploration"]]
+    gate_coverage = coverage(sources)
+    for node in nodes:
+        node["exploration_jumps"] = gate_coverage.get(node["id"])
     graph = sde.gate_graph([node["id"] for node in nodes])
     return {
         "nodes": nodes,
+        "logistics_links": links,
         "simplified_view": bool(context.get("simplified_view")),
         "capital": capital.pk if capital else None,
         "capital_name": capital.name if capital else None,

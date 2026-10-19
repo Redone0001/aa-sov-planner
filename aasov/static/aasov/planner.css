@@ -44,3 +44,6 @@
   .sov-map-canvas { height: 55vh; min-height: 320px; }
   .sov-map-selection { max-height: 28rem; }
 }
+
+.sov-map-logistics { stroke: #b078e8; stroke-width: 3; }
+.sov-map-logistics.invalid { stroke: var(--bs-danger); stroke-dasharray: 5 4; }

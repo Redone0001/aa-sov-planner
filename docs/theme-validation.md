@@ -98,3 +98,15 @@ Flatly, Darkly and Materia browser checks verified the two-column Viewer list, O
 ## CSV exports and workforce imports (0.8.0)
 
 Flatly, Darkly and Materia browser checks verified upgrade CSV downloads, route-template downloads, route preview without mutation, Apply, refreshed map arrows with selection preserved, and route CSV downloads. No document navigations or JavaScript errors occurred. The Darkly preview was visually inspected. Synthetic data was used; external images/fonts were blocked while AA scripts remained enabled. Automated tests cover export/re-import, Viewer restrictions, permission boundaries, source merging, batch destination swaps, transit validity, duplicate conflicts, route limits, both resource scenarios and stale previews.
+
+### Exploration coverage and logistics links (1.1.0)
+
+Verified in real AA 5.3.1 with Flatly, Darkly and Materia: green exploration
+coverage, selected-system coverage text, independent layer toggles, and the
+Advanced Logistics link modal. Browser interaction also verified AJAX link
+creation and removal without a page reload. Backend tests cover the inclusive
+five-stargate-jump boundary, paths outside the plan, detector tiers, link range,
+status and project permissions, duplicate links, and simplified viewer filtering.
+
+Detector family names and the 0–5 jump coverage follow CCP's
+[Sovereignty Hub documentation](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub).
