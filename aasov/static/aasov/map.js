@@ -86,7 +86,7 @@
             const label = element("span", `Zone ${zone}: ${ranges[zone-1]} LY`), swatch = element("span", null, "sov-map-swatch");
             label.dataset.zone = zone; swatch.style.backgroundColor = color; label.prepend(swatch); legend.append(label);
         }
-        if (enabled.exploration) legend.append(element("span", "● Green: exploration bonus within 5 jumps (including source)", "text-success"));
+        if (enabled.exploration) legend.append(element("span", "Green halo: exploration bonus within 5 jumps (including source)", "text-success"));
         if (enabled.logistics) legend.append(element("span", "Purple line: saved logistics link; dashed red: invalid"));
         if (!data.capital) legend.append(element("span", "Set a plan capital to display distance zones.", "text-body-secondary"));
         if (data.capital && !colors.size) legend.append(element("span", "No capital-distance data available. Reload geographic coordinates in the SDE.", "text-warning"));
@@ -128,11 +128,14 @@
             if (selected && !active && !reachable && !(enabled.exploration && explorationJumps(n) != null)) group.setAttribute("opacity", ".42");
             const width = nodeWidth(n);
             const box = pad => ({x:-width/2-pad, y:-17-pad, width:width+2*pad, height:34+2*pad, rx:6+pad});
-            if (reachable) svg("rect", {...box(5),class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
-            if (active) svg("rect", {...box(9),fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
             const covered = enabled.exploration && explorationJumps(n) != null;
-            const fill = covered ? "rgb(32, 125, 68)" : colors.get(n.zone)||"rgb(100, 110, 120)";
-            if (covered) group.setAttribute("data-exploration-jumps", explorationJumps(n));
+            if (covered) {
+                group.setAttribute("data-exploration-jumps", explorationJumps(n));
+                svg("rect", {...box(5),class:"sov-map-exploration-halo",fill:"none",stroke:"#35c971","stroke-width":3,"vector-effect":"non-scaling-stroke","pointer-events":"none"}, group);
+            }
+            if (reachable) svg("rect", {...box(covered ? 10 : 5),class:"sov-map-candidate","vector-effect":"non-scaling-stroke"}, group);
+            if (active) svg("rect", {...box(covered ? 15 : 9),fill:"none",stroke:"var(--bs-body-color)","stroke-width":2}, group);
+            const fill = colors.get(n.zone)||"rgb(100, 110, 120)";
             svg("rect", {...box(0), class:"sov-map-system-shape", fill, stroke:enabled.warnings && n.warnings?.length ? "var(--bs-danger)" : "var(--bs-body-color)", "stroke-width":enabled.warnings && n.warnings?.length ? 3 : 1, "stroke-dasharray":n.planned_id ? "none" : "2 2"}, group);
             const rgb = fill.match(/\d+/g).map(Number);
             const foreground = rgb[0]*.299 + rgb[1]*.587 + rgb[2]*.114 > 150 ? "#172335" : "#ffffff";

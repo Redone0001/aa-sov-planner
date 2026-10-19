@@ -110,3 +110,9 @@ status and project permissions, duplicate links, and simplified viewer filtering
 
 Detector family names and the 0–5 jump coverage follow CCP's
 [Sovereignty Hub documentation](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub).
+
+Exploration display follow-up: verified in Flatly, Darkly and Materia that
+turning exploration on preserves every system's zone fill and warning border.
+Covered systems use a separate green halo; gold range and selection outlines
+are spaced outside it. Browser checks exercised combined exploration, resource
+warnings, Ansiblex candidates and selection, plus turning the halo off again.
