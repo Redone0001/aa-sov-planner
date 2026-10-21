@@ -2,7 +2,7 @@
 
 Plan sovereignty upgrades, power and workforce across EVE Online systems inside **Alliance Auth 5.x**. Create projects from regions or individual systems, compare the current setup with the intended plan, and manage workforce routes on a list or interactive map.
 
-**Development version: 1.1.0** (includes migration `0008_logisticslink`; update from `master`, run `migrate` and `collectstatic`, then restart AA).
+**Development version: 1.1.1** (includes migration `0008_logisticslink`; update from `master`, run `migrate` and `collectstatic`, then restart AA).
 
 **Current release: [1.0.0](https://github.com/Redone0001/aa-sov-planner/releases/tag/v1.0.0)** · [Theme verification](docs/theme-validation.md) · [MIT license](LICENSE)
 
