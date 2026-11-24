@@ -1,4 +1,4 @@
-"""Queries against django-eveonline-sde 0.2; no copied or hardcoded resource values."""
+"""Queries shared by django-eveonline-sde 0.2 through 2.x; resource values come from SDE."""
 
 import re
 from collections import defaultdict
